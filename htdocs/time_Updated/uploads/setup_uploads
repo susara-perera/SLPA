@@ -1,0 +1,21 @@
+<?php
+$upload_dir = 'uploads/';
+
+// Check if the uploads directory exists
+if (!is_dir($upload_dir)) {
+    // Create the uploads directory
+    if (mkdir($upload_dir, 0777, true)) {
+        echo "Uploads directory created successfully.";
+    } else {
+        echo "Failed to create uploads directory.";
+        exit;
+    }
+}
+
+// Set permissions for the uploads directory
+if (chmod($upload_dir, 0777)) {
+    echo "Permissions set successfully for the uploads directory.";
+} else {
+    echo "Failed to set permissions for the uploads directory.";
+}
+?>
