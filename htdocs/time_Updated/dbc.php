@@ -19,6 +19,5 @@ if (!$connect) {
 
 mysqli_set_charset($connect, "utf8");
 
-
 ?>
 
