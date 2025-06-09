@@ -117,7 +117,9 @@ $ports = [
                         <?php foreach ($ports as $port): ?>
                             <li class="list-group-item d-flex align-items-center">
                                 <i class="fas fa-map-marker-alt text-primary"></i>
-                                <span><?= htmlspecialchars($port['name']) ?></span>
+                                <a href="port_login.php?port=<?= urlencode($port['name']) ?>" style="text-decoration:none;color:inherit;">
+                                    <?= htmlspecialchars($port['name']) ?>
+                                </a>
                             </li>
                         <?php endforeach; ?>
                     </ul>
