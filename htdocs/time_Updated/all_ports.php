@@ -16,7 +16,7 @@ $ports = [
 <head>
     <meta charset="UTF-8">
     <title>All Ports In Sri Lanka</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/jpeg" href="dist/img/logo.jpg">
     <!-- AdminLTE CSS -->
     <link rel="stylesheet" href="dist/css/adminlte.min.css">
     <!-- Font Awesome -->
