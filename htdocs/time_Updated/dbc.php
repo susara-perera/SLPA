@@ -16,7 +16,7 @@ if (!$connect) {
     // Display error message to the user
     die("Sorry, we are experiencing technical difficulties. Please try again later.");
 }
-
+//update test
 mysqli_set_charset($connect, "utf8");
 
 ?>
