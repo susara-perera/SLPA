@@ -44,48 +44,53 @@ if ($result && mysqli_num_rows($result) > 0) {
         <div class="p-3 border bg-light">
             <div class="container">
                 <form action="generate_report.php" method="POST">
-                    <div class="form-group">
-                        <label for="report_type">Select Report Type:</label>
-                        <select name="report_type" id="report_type" class="form-control" required>
-                            <option value="" disabled selected>Select Report Type</option>
-                            <option value="individual">Individual</option>
-                            <option value="group">Group</option>
-                        </select>
+                    <div class="form-group mb-3">
+                        <label>Select Report Type:</label><br>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="report_type" id="individual" value="individual" required>
+                            <label class="form-check-label" for="individual">Individual</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="report_type" id="group" value="group" required>
+                            <label class="form-check-label" for="group">Group</label>
+                        </div>
                     </div>
-                    <div class="form-group" id="employee_div">
-                        <label for="employee_ID">Employee ID:</label>
-                        <input type="text" id="employee_ID" name="employee_ID" class="form-control" placeholder="Enter Employee ID">
+
+                    <div class="form-group mb-3" id="employee_div" style="display:none;">
+                        <label for="employee_ID">Employee ID</label>
+                        <input type="text" class="form-control" id="employee_ID" name="employee_ID">
                     </div>
-                    <div class="form-group" id="division_div" style="display: none;">
-                        <label for="division">Select Division:</label>
-                        <select name="division" id="division" class="form-control">
-                        <option value="" disabled selected>Select Division</option>
+
+                    <div class="form-group mb-3" id="division_div" style="display:none;">
+                        <label for="division">Division</label>
+                        <select class="form-control" id="division" name="division">
+                            <option value="">Select Division</option>
                             <?php foreach ($divisions as $division): ?>
-                                <option value="<?php echo $division['division_id']; ?>">
-                                    <?php echo $division['division_name']; ?>
+                                <option value="<?= htmlspecialchars($division['division_id']) ?>">
+                                    <?= htmlspecialchars($division['division_name']) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    
-                    <!-- New Section Selector -->
-                    <div class="form-group" id="section_div" style="display: none;">
-                        <label for="section">Select Section:</label>
-                        <select name="section" id="section" class="form-control">
-                            <option value="all">All Sections</option>
-                            <!-- Sections will be dynamically populated based on the division -->
+
+                    <div class="form-group mb-3" id="section_div" style="display:none;">
+                        <label for="section">Section</label>
+                        <select class="form-control" id="section" name="section">
+                            <option value="">Select Section</option>
+                            <!-- Sections will be loaded dynamically -->
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label for="from_date">Select From Date:</label>
+                    <div class="form-group mb-3">
+                        <label for="from_date">From Date</label>
                         <input type="date" class="form-control" id="from_date" name="from_date" required>
                     </div>
-                    <div class="form-group">
-                        <label for="to_date">Select To Date:</label>
+                    <div class="form-group mb-3">
+                        <label for="to_date">To Date</label>
                         <input type="date" class="form-control" id="to_date" name="to_date" required>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-lg btn-block">Generate Report</button>
+
+                    <button type="submit" class="btn btn-primary">Generate</button>
                 </form>
             </div>
         </div>
@@ -93,54 +98,44 @@ if ($result && mysqli_num_rows($result) > 0) {
 </div>
 
 <script>
-// Handle the display of the employee and division fields
-document.getElementById('report_type').addEventListener('change', function() {
-    var reportType = this.value;
-    if (reportType === 'individual') {
-        document.getElementById('employee_div').style.display = 'block';
-        document.getElementById('division_div').style.display = 'none';
-        document.getElementById('section_div').style.display = 'none';
-        document.getElementById('employee_ID').required = true;
-        document.getElementById('division').required = false;
-        document.getElementById('section').required = false;
-    } else if (reportType === 'group') {
-        document.getElementById('employee_div').style.display = 'none';
-        document.getElementById('division_div').style.display = 'block';
-        document.getElementById('employee_ID').required = false;
-        document.getElementById('division').required = true;
-        document.getElementById('section').required = false;
-    } else {
-        document.getElementById('employee_div').style.display = 'none';
-        document.getElementById('division_div').style.display = 'none';
-        document.getElementById('section_div').style.display = 'none';
-    }
+// Show/hide fields based on radio selection
+document.querySelectorAll('input[name="report_type"]').forEach(function(elem) {
+    elem.addEventListener('change', function() {
+        var reportType = document.querySelector('input[name="report_type"]:checked').value;
+        if (reportType === 'individual') {
+            document.getElementById('employee_div').style.display = 'block';
+            document.getElementById('division_div').style.display = 'none';
+            document.getElementById('section_div').style.display = 'none';
+            document.getElementById('employee_ID').required = true;
+            document.getElementById('division').required = false;
+            document.getElementById('section').required = false;
+        } else if (reportType === 'group') {
+            document.getElementById('employee_div').style.display = 'none';
+            document.getElementById('division_div').style.display = 'block';
+            document.getElementById('section_div').style.display = 'block';
+            document.getElementById('employee_ID').required = false;
+            document.getElementById('division').required = true;
+            document.getElementById('section').required = false;
+        }
+    });
 });
 
 // Fetch sections dynamically when a division is selected
 document.getElementById('division').addEventListener('change', function() {
     var divisionId = this.value;
-
-    if (divisionId) {
-        fetch('fetch_sections.php?division_id=' + divisionId)
-            .then(response => response.json())
-            .then(data => {
-                var sectionSelect = document.getElementById('section');
-                sectionSelect.innerHTML = '<option value="all">All Sections</option>'; // Default option to select all section
-
-                // Populate sections based on the division
-                data.forEach(section => {
-                    var option = document.createElement('option');
-                    option.value = section.section_id;
-                    option.textContent = section.section_name;
-                    sectionSelect.appendChild(option);
-                });
-
-                // Display the section dropdown
-                document.getElementById('section_div').style.display = 'block';
+    var sectionSelect = document.getElementById('section');
+    sectionSelect.innerHTML = '<option value="">Loading...</option>';
+    fetch('get_sections.php?division_id=' + divisionId)
+        .then(response => response.json())
+        .then(data => {
+            sectionSelect.innerHTML = '<option value="">Select Section</option>';
+            data.forEach(function(section) {
+                var opt = document.createElement('option');
+                opt.value = section.section_id;
+                opt.textContent = section.section_name;
+                sectionSelect.appendChild(opt);
             });
-    } else {
-        document.getElementById('section_div').style.display = 'none';
-    }
+        });
 });
 </script>
 

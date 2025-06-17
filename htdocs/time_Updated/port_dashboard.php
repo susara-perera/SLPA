@@ -81,23 +81,14 @@ if (!isset($_SESSION['port_user']) || !isset($_SESSION['port_name'])) {
                         <label class="form-label">Name</label>
                         <input type="text" class="form-control" placeholder="Enter Employee Name">
                     </div>
-                    <div class="mb-2">
-                        <label class="form-label">Destination</label>
-                        <select class="form-select">
-                            <option selected>Select Port</option>
-                            <option>Colombo</option>
-                            <option>Galle</option>
-                            <option>Trincomalee</option>
-                            <option>Hambantota</option>
-                        </select>
-                    </div>
+                  
                     <div class="mb-2">
                         <label class="form-label">Division</label>
                         <select class="form-select">
                             <option selected>Select Division</option>
-                            <option>Operations</option>
-                            <option>Logistics</option>
-                            <option>Maintenance</option>
+                            <option>ECT</option>
+                            <option>JCT</option>
+                            <option>ITT</option>
                         </select>
                     </div>
                     <div class="mb-3">
