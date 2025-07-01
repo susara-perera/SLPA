@@ -23,6 +23,7 @@
     "issues": "https://github.com/ColorlibHQ/AdminLTE/issues"
   },
   "require": {
-    "phpoffice/phpspreadsheet": "^1.0"
+    "phpoffice/phpspreadsheet": "^1.0",
+    "tecnickcom/tcpdf": "^6.4"
   }
 }
