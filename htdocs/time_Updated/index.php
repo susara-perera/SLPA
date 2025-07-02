@@ -136,6 +136,28 @@ mysqli_close($connect);
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* Background Video Styles */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            object-fit: cover;
+            opacity: 0.3;
+        }
+
+        .video-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: -1;
+        }
+
         /* Fixed dashboard header */
         .top-header {
             display: flex;
@@ -207,9 +229,22 @@ mysqli_close($connect);
         }
 
         .date-time-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-top: 3px;
+        }
+
+        .current-date {
             font-size: 14px;
             color: rgba(255, 255, 255, 0.7);
-            margin-top: 3px;
+        }
+
+        .current-time {
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: 0.5px;
         }
 
         .header-right {
@@ -288,25 +323,6 @@ mysqli_close($connect);
             transform: scale(1.2);
         }
 
-        .time-display {
-            color: white;
-            font-weight: 600;
-            font-size: 18px;
-            text-align: right;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 2px;
-        }
-
-        .current-time {
-            font-size: 24px;
-            font-weight: 700;
-            color: #ffffff;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            letter-spacing: 1px;
-        }
-
         .time-label {
             font-size: 12px;
             color: rgba(255, 255, 255, 0.7);
@@ -328,18 +344,20 @@ mysqli_close($connect);
 
         .notification-icon {
             font-size: 24px;
-            color: rgba(255, 255, 255, 0.9);
+            color: #2c3e50;
             transition: all 0.3s ease;
             padding: 8px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(44, 62, 80, 0.15);
             backdrop-filter: blur(10px);
+            box-shadow: 0 0 15px rgba(44, 62, 80, 0.3);
         }
 
         .notification-icon:hover {
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.2);
+            color: #34495e;
+            background: rgba(44, 62, 80, 0.25);
             transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(44, 62, 80, 0.5);
         }
 
         .notification-badge {
@@ -580,17 +598,28 @@ mysqli_close($connect);
     </style>
 </head>
 
+<!-- Background Video -->
+<video autoplay muted loop playsinline class="video-background" id="bgVideo">
+    <source src="./images/web_video_slpa.mp4" type="video/mp4">
+    <source src="images/web_video_slpa.mp4" type="video/mp4">
+    <source src="./images/web_video_slpa.webm" type="video/webm">
+</video>
+
+<!-- Video Overlay -->
+<div class="video-overlay"></div>
+
 <!-- Top Header Section -->
 <div class="top-header">
     <!-- Welcome Section -->
     <div class="welcome-section">
-        <div class="welcome-text">Welcome Admin</div>
+        <div class="welcome-text">👋 Welcome Admin</div>
         <div class="status-text">
             <i class="<?php echo $greetingIcon; ?> greeting-icon" style="color: <?php echo $greetingColor; ?>;"></i>
             <?php echo $greeting; ?>
         </div>
         <div class="date-time-info">
-            <?php echo $currentDate; ?>
+            <div class="current-date"><?php echo $currentDate; ?></div>
+            <div class="current-time" id="currentTime"><?php echo $currentTime; ?></div>
         </div>
     </div>
     
@@ -634,15 +663,12 @@ mysqli_close($connect);
         <!-- Navigation Buttons -->
         <div class="nav-buttons">
           
-            <a href="logout.php" class="nav-btn logout-btn" onclick="return confirm('Are you sure you want to logout?')">
-                <i class="fas fa-sign-out-alt"></i>
-                Logout
-            </a>
         </div>
         
-        <div class="time-display">
-            <div class="current-time" id="currentTime"><?php echo $currentTime; ?></div>
-        </div>
+        <a href="logout.php" class="nav-btn logout-btn" onclick="return confirm('Are you sure you want to logout?')" style="padding: 6px 10px; font-size: 12px; margin-left: 15px;">
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+        </a>
     </div>
 </div>
 
@@ -758,7 +784,7 @@ mysqli_close($connect);
             day: 'numeric' 
         };
         const dateString = now.toLocaleDateString('en-US', options);
-        document.querySelector('.date-time-info').textContent = dateString;
+        document.querySelector('.current-date').textContent = dateString;
     }
     
     // Update time every second
@@ -915,6 +941,18 @@ mysqli_close($connect);
     function printPage() {
         window.print();
     }
+
+    // Background video handling
+    document.addEventListener('DOMContentLoaded', function() {
+        const video = document.getElementById('bgVideo');
+        if (video) {
+            video.play().catch(function(error) {
+                console.log('Video autoplay failed:', error);
+                // Video failed to play, hide video element
+                video.style.display = 'none';
+            });
+        }
+    });
 </script>
 
 <?php include('includes/footer.php'); ?>
