@@ -503,6 +503,77 @@
     <div class="video-overlay"></div>
     
     <script>
+        // User role mapping based on User ID patterns
+        const userRoleMap = {
+            // Super Admin IDs (SA prefix)
+            'SA001': { role: 'Super_Ad', display: 'Super Admin' },
+            'SA002': { role: 'Super_Ad', display: 'Super Admin' },
+            'SA003': { role: 'Super_Ad', display: 'Super Admin' },
+            'SA1001': { role: 'Super_Ad', display: 'Super Admin' },
+            
+            // Administration IDs (AD prefix)
+            'AD001': { role: 'Administration', display: 'Administration' },
+            'AD002': { role: 'Administration', display: 'Administration' },
+            'AD003': { role: 'Administration', display: 'Administration' },
+            'AD004': { role: 'Administration', display: 'Administration' },
+            'AD005': { role: 'Administration', display: 'Administration' },
+            
+            // Administrative Clerk IDs (AC prefix)
+            'AC001': { role: 'Administration_clerk', display: 'Administrative Clerk' },
+            'AC002': { role: 'Administration_clerk', display: 'Administrative Clerk' },
+            'AC003': { role: 'Administration_clerk', display: 'Administrative Clerk' },
+            'AC004': { role: 'Administration_clerk', display: 'Administrative Clerk' },
+            'AC005': { role: 'Administration_clerk', display: 'Administrative Clerk' },
+            'AC006': { role: 'Administration_clerk', display: 'Administrative Clerk' },
+            'AC007': { role: 'Administration_clerk', display: 'Administrative Clerk' },
+            'AC008': { role: 'Administration_clerk', display: 'Administrative Clerk' },
+            'AC009': { role: 'Administration_clerk', display: 'Administrative Clerk' },
+            'AC010': { role: 'Administration_clerk', display: 'Administrative Clerk' },
+            
+            // Clerk IDs (CL prefix)
+            'CL001': { role: 'clerk', display: 'Clerk' },
+            'CL002': { role: 'clerk', display: 'Clerk' },
+            'CL003': { role: 'clerk', display: 'Clerk' },
+            'CL004': { role: 'clerk', display: 'Clerk' },
+            'CL005': { role: 'clerk', display: 'Clerk' },
+            'CL006': { role: 'clerk', display: 'Clerk' },
+            'CL007': { role: 'clerk', display: 'Clerk' },
+            'CL008': { role: 'clerk', display: 'Clerk' },
+            'CL009': { role: 'clerk', display: 'Clerk' },
+            'CL010': { role: 'clerk', display: 'Clerk' },
+            'CL011': { role: 'clerk', display: 'Clerk' },
+            'CL012': { role: 'clerk', display: 'Clerk' },
+            'CL013': { role: 'clerk', display: 'Clerk' },
+            'CL014': { role: 'clerk', display: 'Clerk' },
+            'CL015': { role: 'clerk', display: 'Clerk' }
+        };
+
+        // Function to identify role based on User ID
+        function identifyRole(userId) {
+            if (!userId) return null;
+            
+            // Convert to uppercase for consistency
+            userId = userId.toUpperCase().trim();
+            
+            // Direct mapping check
+            if (userRoleMap[userId]) {
+                return userRoleMap[userId];
+            }
+            
+            // Pattern-based identification if direct mapping not found
+            if (userId.startsWith('SA')) {
+                return { role: 'Super_Ad', display: 'Super Admin' };
+            } else if (userId.startsWith('AD')) {
+                return { role: 'Administration', display: 'Administration' };
+            } else if (userId.startsWith('AC')) {
+                return { role: 'Administration_clerk', display: 'Administrative Clerk' };
+            } else if (userId.startsWith('CL')) {
+                return { role: 'clerk', display: 'Clerk' };
+            }
+            
+            return null;
+        }
+
         // Ensure immediate form visibility and video plays on page load
         document.addEventListener('DOMContentLoaded', function() {
             // Show form immediately
@@ -520,6 +591,36 @@
                     // Video failed to play, remove video element to show gradient background
                     video.style.display = 'none';
                 });
+            }
+
+            // Add event listener for User ID input
+            const userIdInput = document.getElementById('user_id');
+            const roleHiddenInput = document.getElementById('role');
+
+            if (userIdInput && roleHiddenInput) {
+                userIdInput.addEventListener('input', function() {
+                    const userId = this.value;
+                    const roleInfo = identifyRole(userId);
+                    
+                    if (roleInfo) {
+                        roleHiddenInput.value = roleInfo.role;
+                    } else {
+                        roleHiddenInput.value = '';
+                    }
+                });
+
+                // Form validation before submission
+                const form = document.querySelector('form');
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        const roleValue = roleHiddenInput.value;
+                        if (!roleValue) {
+                            e.preventDefault();
+                            alert('Please enter a valid User ID. Role could not be identified.');
+                            userIdInput.focus();
+                        }
+                    });
+                }
             }
         });
 
@@ -543,19 +644,15 @@
                     <form method="POST" action="./login_action.php">
 
                         <div class="input-box">
-                            <label for="role"><span class="icon"><ion-icon name="person-circle"></ion-icon>&nbsp; </span>User Role</label>
-                            <select name="role" id="role" class="form-control" placeholder="User role" required>
-                                <option value="" disabled selected>Select Role</option>
-                                <option value="Super_Ad">Super Admin </option>
-                                <option value="Administration">Administration</option>
-                                <option value="Administration_clerk">Administrative Clerk</option>
-                                <option value="clerk">Clerk</option>
-                            </select>
+                            <label for="user_id"><span class="icon"><ion-icon name="person-circle"></ion-icon>&nbsp; </span>User ID</label>
+                            <input type="text" id="user_id" name="user_id" placeholder="Enter your User ID" required />
                         </div>
+
+                        <input type="hidden" id="role" name="role" />
 
                         <div class="input-box">
                             <label for="password"><span class="icon"><ion-icon name="lock-closed"></ion-icon>&nbsp; </span>Password</label>
-                            <input type="password" placeholder="Enter password" name="password" required />
+                            <input type="password" id="password" name="password" placeholder="Enter password" required />
                         </div>
 
 
@@ -569,8 +666,13 @@
                             <button type="submit" class="btn">Login</button><br>
                         </div>
                         <?php
-                        if (isset($_GET['error']) && $_GET['error'] === 'password_incorrect') {
-                            echo '<div class="error-message">Invalid password. Please try again!</div>';
+                        if (isset($_GET['error'])) {
+                            $error = $_GET['error'];
+                            if ($error === 'password_incorrect') {
+                                echo '<div class="error-message">Invalid password. Please try again!</div>';
+                            } elseif ($error === 'user_not_found') {
+                                echo '<div class="error-message">Invalid User ID or credentials. Please check your User ID.</div>';
+                            }
                         }
                         ?>
                     </form>

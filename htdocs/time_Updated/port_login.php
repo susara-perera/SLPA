@@ -1,20 +1,186 @@
 <?php
 session_start();
 
+// Include database connection
+include_once 'dbc.php';
+
 // Clear previous port session data before new login
 unset($_SESSION['port_user']);
 unset($_SESSION['port_name']);
 
-// Hardcoded port logins: [port_name][username] => password
-$port_logins = [
-    "Colombo Port" => ["ColomboAdmin" => "Colombo123!"],
-    "Galle Port" => ["GalleAdmin" => "Galle123!"],
-    "Trincomalee Port" => ["TrincomaleeAdmin" => "Trincomalee123!"],
-    "Hambantota Port" => ["HambantotaAdmin" => "Hambantota123!"],
-    "Kankesanthurai Port" => ["KankesanthuraiAdmin" => "Kankesanthurai123!"],
-    "Oluvil Port" => ["OluvilAdmin" => "Oluvil123!"],
-    "Point Pedro Port" => ["Point_PedroAdmin" => "Point_Pedro123!"]
-];
+// Function to create ports table if it doesn't exist (needed for foreign key)
+function createPortsTable($connect) {
+    $sql = "CREATE TABLE IF NOT EXISTS ports (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        port_name VARCHAR(100) NOT NULL UNIQUE,
+        latitude DECIMAL(10, 8) NOT NULL,
+        longitude DECIMAL(11, 8) NOT NULL,
+        port_code VARCHAR(10) UNIQUE,
+        status ENUM('Active', 'Inactive') DEFAULT 'Active',
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )";
+    
+    if (mysqli_query($connect, $sql)) {
+        error_log("Ports table created successfully or already exists");
+        return true;
+    } else {
+        error_log("Error creating ports table: " . mysqli_error($connect));
+        return false;
+    }
+}
+
+// Function to insert default ports if table is empty
+function insertDefaultPorts($connect) {
+    $checkSql = "SELECT COUNT(*) as count FROM ports";
+    $result = mysqli_query($connect, $checkSql);
+    $row = mysqli_fetch_assoc($result);
+    
+    if ($row['count'] == 0) {
+        $defaultPorts = [
+            ["Colombo Port", 6.9538, 79.8500, "CMB", "Main commercial port of Sri Lanka"],
+            ["Galle Port", 6.0351, 80.2170, "GLE", "Historic port in the southern province"],
+            ["Trincomalee Port", 8.5708, 81.2332, "TRN", "Natural deep water harbor in the east"],
+            ["Hambantota Port", 6.1248, 81.1185, "HMB", "Modern port in the southern coast"],
+            ["Kankesanthurai Port", 9.8150, 80.0717, "KKS", "Northern province port facility"],
+            ["Oluvil Port", 7.2522, 81.8384, "OLV", "Eastern province fishing port"],
+            ["Point Pedro Port", 9.8167, 80.2333, "PPD", "Northernmost port of Sri Lanka"]
+        ];
+        
+        $insertSql = "INSERT INTO ports (port_name, latitude, longitude, port_code, description) VALUES (?, ?, ?, ?, ?)";
+        $stmt = mysqli_prepare($connect, $insertSql);
+        
+        foreach ($defaultPorts as $port) {
+            mysqli_stmt_bind_param($stmt, "sddss", $port[0], $port[1], $port[2], $port[3], $port[4]);
+            mysqli_stmt_execute($stmt);
+        }
+        mysqli_stmt_close($stmt);
+        error_log("Default ports inserted successfully");
+    }
+}
+
+// Function to create port_users table if it doesn't exist
+function createPortUsersTable($connect) {
+    // First, ensure ports table exists
+    if (!createPortsTable($connect)) {
+        return false;
+    }
+    insertDefaultPorts($connect);
+    
+    // Try creating table with foreign key first
+    $sql = "CREATE TABLE IF NOT EXISTS port_users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        port_id INT NOT NULL,
+        username VARCHAR(50) NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        status ENUM('Active', 'Inactive') DEFAULT 'Active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (port_id) REFERENCES ports(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_port_user (port_id, username)
+    )";
+    
+    if (mysqli_query($connect, $sql)) {
+        error_log("Port users table created successfully with foreign key");
+        return true;
+    } else {
+        error_log("Error creating port users table with foreign key: " . mysqli_error($connect));
+        
+        // Fallback: Create table without foreign key constraint
+        $sql_fallback = "CREATE TABLE IF NOT EXISTS port_users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            port_id INT NOT NULL,
+            username VARCHAR(50) NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            status ENUM('Active', 'Inactive') DEFAULT 'Active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_port_user (port_id, username),
+            INDEX idx_port_id (port_id)
+        )";
+        
+        if (mysqli_query($connect, $sql_fallback)) {
+            error_log("Port users table created successfully without foreign key (fallback)");
+            return true;
+        } else {
+            error_log("Error creating port users table (fallback): " . mysqli_error($connect));
+            return false;
+        }
+    }
+}
+
+// Function to insert default port users if table is empty
+function insertDefaultPortUsers($connect) {
+    // Check if port_users table has data
+    $checkSql = "SELECT COUNT(*) as count FROM port_users";
+    $result = mysqli_query($connect, $checkSql);
+    
+    if ($result) {
+        $row = mysqli_fetch_assoc($result);
+        
+        if ($row['count'] == 0) {
+            // Get all ports first
+            $portsSql = "SELECT id, port_name FROM ports WHERE status = 'Active'";
+            $portsResult = mysqli_query($connect, $portsSql);
+            
+            if ($portsResult && mysqli_num_rows($portsResult) > 0) {
+                $insertSql = "INSERT INTO port_users (port_id, username, password) VALUES (?, ?, ?)";
+                $stmt = mysqli_prepare($connect, $insertSql);
+                
+                while ($port = mysqli_fetch_assoc($portsResult)) {
+                    // Create admin username based on port name
+                    $username = str_replace([' ', 'Port'], ['', ''], $port['port_name']) . 'Admin';
+                    $password = password_hash($username . '123!', PASSWORD_DEFAULT);
+                    
+                    mysqli_stmt_bind_param($stmt, "iss", $port['id'], $username, $password);
+                    mysqli_stmt_execute($stmt);
+                }
+                mysqli_stmt_close($stmt);
+                error_log("Default port users created successfully");
+            }
+        }
+    }
+}
+
+// Function to create port_login_logs table if it doesn't exist
+function createLoginLogsTable($connect) {
+    $sql = "CREATE TABLE IF NOT EXISTS port_login_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        port_id INT NOT NULL,
+        username VARCHAR(50) NOT NULL,
+        login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        status ENUM('Success', 'Failed') DEFAULT 'Success',
+        ip_address VARCHAR(45),
+        user_agent TEXT,
+        INDEX idx_port_id (port_id),
+        INDEX idx_login_time (login_time)
+    )";
+    
+    if (mysqli_query($connect, $sql)) {
+        error_log("Port login logs table created successfully or already exists");
+        return true;
+    } else {
+        error_log("Error creating port login logs table: " . mysqli_error($connect));
+        return false;
+    }
+}
+
+// Initialize database tables
+$db_error = '';
+if ($connect) {
+    $table_created = createPortUsersTable($connect);
+    $logs_table_created = createLoginLogsTable($connect);
+    
+    if ($table_created) {
+        insertDefaultPortUsers($connect);
+    } else {
+        $db_error = "Failed to initialize database tables.";
+        error_log("Database initialization failed in port_login.php");
+    }
+} else {
+    $db_error = "Database connection failed.";
+}
 
 $error = '';
 $selected_port = isset($_GET['port']) ? $_GET['port'] : (isset($_POST['port_name']) ? $_POST['port_name'] : '');
@@ -24,19 +190,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
-    if (
-        isset($port_logins[$port_name]) &&
-        isset($port_logins[$port_name][$username]) &&
-        $port_logins[$port_name][$username] === $password
-    ) {
-        session_regenerate_id(true); // Add this line
-        $_SESSION['port_user'] = $username;
-        $_SESSION['port_name'] = $port_name;
-        header("Location: port_dashboard.php");
-        exit();
+    // Validate credentials against database
+    $sql = "SELECT pu.*, p.port_name 
+            FROM port_users pu 
+            JOIN ports p ON pu.port_id = p.id 
+            WHERE p.port_name = ? AND pu.username = ? AND pu.status = 'Active'";
+    
+    $stmt = mysqli_prepare($connect, $sql);
+    mysqli_stmt_bind_param($stmt, "ss", $port_name, $username);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    
+    if ($user = mysqli_fetch_assoc($result)) {
+        if (password_verify($password, $user['password'])) {
+            session_regenerate_id(true);
+            $_SESSION['port_user'] = $username;
+            $_SESSION['port_name'] = $port_name;
+            $_SESSION['port_id'] = $user['port_id'];
+            
+            // Try to log successful login (optional - won't break login if it fails)
+            try {
+                $logSql = "INSERT INTO port_login_logs (port_id, username, login_time, status, ip_address) VALUES (?, ?, NOW(), 'Success', ?)";
+                $logStmt = mysqli_prepare($connect, $logSql);
+                if ($logStmt) {
+                    $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+                    mysqli_stmt_bind_param($logStmt, "iss", $user['port_id'], $username, $ip_address);
+                    mysqli_stmt_execute($logStmt);
+                    mysqli_stmt_close($logStmt);
+                }
+            } catch (Exception $e) {
+                // Log the error but don't break the login process
+                error_log("Failed to log login activity: " . $e->getMessage());
+            }
+            
+            header("Location: port_dashboard.php");
+            exit();
+        } else {
+            $error = "Invalid credentials";
+        }
     } else {
         $error = "Invalid credentials";
     }
+    mysqli_stmt_close($stmt);
 }
 
 if (!$selected_port) {
@@ -411,6 +606,14 @@ if (!$selected_port) {
             <div class="alert">
                 <i class="fas fa-exclamation-triangle"></i>
                 <?= htmlspecialchars($error) ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($db_error): ?>
+            <div class="alert" style="background: rgba(229, 62, 62, 0.25); border-color: rgba(229, 62, 62, 0.5);">
+                <i class="fas fa-database"></i>
+                Database Error: <?= htmlspecialchars($db_error) ?>
+                <br><small>Please contact system administrator if this persists.</small>
             </div>
         <?php endif; ?>
 
