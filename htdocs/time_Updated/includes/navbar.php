@@ -473,7 +473,7 @@
           </a>
           <ul class="nav nav-treeview">
             <li class="nav-item">
-              <a href="unit.php" class="nav-link">
+              <a href="generate_report.php" class="nav-link">
                 <i class="fa fa-angle-left"></i>
                 <p>Unit Attendance Report</p>
               </a>
