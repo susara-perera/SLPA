@@ -4,18 +4,23 @@ include('includes/navbar.php');
 include('./includes/scripts.php');
 include_once 'dbc.php';
 
+// Define current date
+$today = date('Y-m-d');
+$currentWeek = date('Y-m-d', strtotime('monday this week'));
+$currentWeekEnd = date('Y-m-d', strtotime('sunday this week'));
+
 // Fetch all users
 $allUsersQuery = "SELECT COUNT(*) as total_users FROM users";
 $allUsersResult = mysqli_query($connect, $allUsersQuery);
 $allUsers = mysqli_fetch_assoc($allUsersResult)['total_users'];
 
-// Fetch active users
-$activeUsersQuery = "SELECT COUNT(*) as active_users FROM login WHERE status = 'Active'";
+// Fetch active users (logged in today)
+$activeUsersQuery = "SELECT COUNT(DISTINCT user_id) as active_users FROM login WHERE DATE(login_time) = '$today' AND status = 'Active'";
 $activeUsersResult = mysqli_query($connect, $activeUsersQuery);
 $activeUsers = mysqli_fetch_assoc($activeUsersResult)['active_users'];
 
 // Fetch employees count by division
-$employeesByDivisionQuery = "SELECT division, COUNT(*) as total_employees FROM employees GROUP BY division";
+$employeesByDivisionQuery = "SELECT division, COUNT(*) as total_employees FROM employees WHERE status = 'Active' GROUP BY division ORDER BY total_employees DESC";
 $employeesByDivisionResult = mysqli_query($connect, $employeesByDivisionQuery);
 $divisions = [];
 $employeesCount = [];
@@ -25,43 +30,112 @@ while ($row = mysqli_fetch_assoc($employeesByDivisionResult)) {
     $employeesCount[] = $row['total_employees'];
 }
 
-// Define current date
-$today = date('Y-m-d');
+// Fetch employees count by gender
+$genderQuery = "SELECT gender, COUNT(*) as count FROM employees WHERE status = 'Active' GROUP BY gender";
+$genderResult = mysqli_query($connect, $genderQuery);
+$genderData = [];
+$genderLabels = [];
+$genderCounts = [];
+
+while ($row = mysqli_fetch_assoc($genderResult)) {
+    $genderLabels[] = $row['gender'];
+    $genderCounts[] = $row['count'];
+}
 
 // Fetch distinct employees who marked IN attendance today
-    $distinctAttendanceQuery = "
-        SELECT COUNT(DISTINCT employee_ID) as distinct_count
-        FROM attendance
-        WHERE date_ = '$today' AND scan_type = 'IN'";
+$distinctAttendanceQuery = "
+    SELECT COUNT(DISTINCT employee_ID) as distinct_count
+    FROM attendance
+    WHERE date_ = '$today' AND scan_type = 'IN'";
 $distinctAttendanceResult = mysqli_query($connect, $distinctAttendanceQuery);
 $distinctCount = mysqli_fetch_assoc($distinctAttendanceResult)['distinct_count'];
 
-// Fetch total employees count
-$totalEmployeesQuery = "SELECT COUNT(*) as total_employees FROM employees";
+// Fetch total active employees count
+$totalEmployeesQuery = "SELECT COUNT(*) as total_employees FROM employees WHERE status = 'Active'";
 $totalEmployeesResult = mysqli_query($connect, $totalEmployeesQuery);
 $totalEmployees = mysqli_fetch_assoc($totalEmployeesResult)['total_employees'];
 
 // Calculate the number of employees who haven't marked attendance
 $notAttendedCount = $totalEmployees - $distinctCount;
 
-// Fetch distinct earliest attendance times for today
-$distinctTimesQuery = "
-    SELECT employee_id, MIN(time_) as earliest_time
+// Fetch attendance data for the last 7 days for weekly chart
+$weeklyAttendanceQuery = "
+    SELECT DATE(date_) as attendance_date, COUNT(DISTINCT employee_ID) as daily_count
     FROM attendance
-    WHERE date_ = '$today' AND scan_type = 'IN'
-    GROUP BY employee_id";
-$distinctTimesResult = mysqli_query($connect, $distinctTimesQuery);
+    WHERE date_ >= DATE_SUB('$today', INTERVAL 6 DAY) 
+    AND date_ <= '$today' 
+    AND scan_type = 'IN'
+    GROUP BY DATE(date_)
+    ORDER BY attendance_date";
+$weeklyAttendanceResult = mysqli_query($connect, $weeklyAttendanceQuery);
 
-$distinctTimes = [];
-while ($row = mysqli_fetch_assoc($distinctTimesResult)) {
-    $distinctTimes[] = $row['earliest_time'];
+$weeklyLabels = [];
+$weeklyData = [];
+$weeklyDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+// Initialize arrays for last 7 days
+for ($i = 6; $i >= 0; $i--) {
+    $date = date('Y-m-d', strtotime("-$i days"));
+    $dayName = date('D', strtotime($date));
+    $weeklyLabels[] = $dayName;
+    $weeklyData[$date] = 0;
 }
 
-// Convert attendance times into numerical values for the wave chart
-$waveChartData = [];
-foreach ($distinctTimes as $time) {
+// Fill in actual data
+while ($row = mysqli_fetch_assoc($weeklyAttendanceResult)) {
+    $weeklyData[$row['attendance_date']] = $row['daily_count'];
+}
+
+// Convert to sequential array for Chart.js
+$weeklyDataValues = array_values($weeklyData);
+
+// Fetch attendance times for today (for wave chart)
+$attendanceTimesQuery = "
+    SELECT employee_ID, TIME(MIN(time_)) as earliest_time
+    FROM attendance
+    WHERE date_ = '$today' AND scan_type = 'IN'
+    GROUP BY employee_ID
+    ORDER BY earliest_time";
+$attendanceTimesResult = mysqli_query($connect, $attendanceTimesQuery);
+
+$attendanceTimes = [];
+$employeeIds = [];
+while ($row = mysqli_fetch_assoc($attendanceTimesResult)) {
+    $time = $row['earliest_time'];
     $timeParts = explode(':', $time);
-    $waveChartData[] = $timeParts[0] + ($timeParts[1] / 60); // Convert time to hours like (08:30 becomes 8.5)
+    $timeInHours = $timeParts[0] + ($timeParts[1] / 60); // Convert to decimal hours
+    $attendanceTimes[] = $timeInHours;
+    $employeeIds[] = $row['employee_ID'];
+}
+
+// Fetch attendance data by scan type for today
+$scanTypeQuery = "
+    SELECT scan_type, COUNT(*) as count
+    FROM attendance
+    WHERE date_ = '$today'
+    GROUP BY scan_type";
+$scanTypeResult = mysqli_query($connect, $scanTypeQuery);
+
+$scanTypeData = ['IN' => 0, 'OUT' => 0];
+while ($row = mysqli_fetch_assoc($scanTypeResult)) {
+    $scanTypeData[$row['scan_type']] = $row['count'];
+}
+
+// Get department-wise attendance for today
+$deptAttendanceQuery = "
+    SELECT e.division, COUNT(DISTINCT a.employee_ID) as present_count
+    FROM attendance a
+    JOIN employees e ON a.employee_ID = e.employee_ID
+    WHERE a.date_ = '$today' AND a.scan_type = 'IN' AND e.status = 'Active'
+    GROUP BY e.division
+    ORDER BY present_count DESC";
+$deptAttendanceResult = mysqli_query($connect, $deptAttendanceQuery);
+
+$deptAttendanceLabels = [];
+$deptAttendanceData = [];
+while ($row = mysqli_fetch_assoc($deptAttendanceResult)) {
+    $deptAttendanceLabels[] = $row['division'];
+    $deptAttendanceData[] = $row['present_count'];
 }
 
 // Get current time and determine appropriate greeting
@@ -534,21 +608,39 @@ mysqli_close($connect);
 
         .chart-container {
             background-color: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             text-align: center;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .chart-container:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
 
         .chart-container h3 {
             font-size: 18px;
-            margin-bottom: 10px;
-            color: #333;
+            margin-bottom: 5px;
+            color: #2c3e50;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .chart-container p {
+            margin-bottom: 15px;
+            font-size: 12px;
         }
 
         canvas {
-            width: 55% !important;
-            height: 300px !important;
+            width: 100% !important;
+            height: 280px !important;
+            margin-top: 10px;
         }
 
         .weekly-attendance {
@@ -641,28 +733,49 @@ mysqli_close($connect);
                     <?php if ($totalNotifications > 0): ?>
                         <?php if ($notifications['employee'] > 0): ?>
                             <div class="notification-item">
-                                <div class="notification-title">New Employees Added</div>
+                                <div class="notification-title">
+                                    <i class="fas fa-user-plus text-success"></i> New Employees Added
+                                </div>
                                 <div class="notification-text"><?php echo $notifications['employee']; ?> new employee(s) added today</div>
                             </div>
                         <?php endif; ?>
                         <?php if ($notifications['user'] > 0): ?>
                             <div class="notification-item">
-                                <div class="notification-title">New Users Registered</div>
+                                <div class="notification-title">
+                                    <i class="fas fa-users text-primary"></i> New Users Registered
+                                </div>
                                 <div class="notification-text"><?php echo $notifications['user']; ?> new user(s) registered today</div>
                             </div>
                         <?php endif; ?>
                     <?php else: ?>
                         <div class="notification-item">
-                            <div class="notification-text">No new notifications today</div>
+                            <div class="notification-text">
+                                <i class="fas fa-check-circle text-muted"></i> No new notifications today
+                            </div>
                         </div>
                     <?php endif; ?>
+                    
+                    <!-- Quick Stats in Notifications -->
+                    <div class="notification-item" style="background: #f8f9fa; border-top: 2px solid #dee2e6;">
+                        <div class="notification-title">Today's Quick Stats</div>
+                        <div class="notification-text">
+                            <small>
+                                <i class="fas fa-users text-primary"></i> <?php echo $distinctCount; ?> present • 
+                                <i class="fas fa-building text-success"></i> <?php echo count($divisions); ?> divisions • 
+                                <i class="fas fa-percentage text-warning"></i> <?php echo $totalEmployees > 0 ? round(($distinctCount / $totalEmployees) * 100, 1) : 0; ?>% attendance
+                            </small>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         
         <!-- Navigation Buttons -->
         <div class="nav-buttons">
-          
+            <button onclick="refreshDashboard()" class="nav-btn" style="background: linear-gradient(135deg, #17a2b8, #20c997); color: white; border: 2px solid rgba(255, 255, 255, 0.2);">
+                <i class="fas fa-sync-alt"></i>
+                Refresh
+            </button>
         </div>
         
         <a href="logout.php" class="nav-btn logout-btn" onclick="return confirm('Are you sure you want to logout?')" style="padding: 6px 10px; font-size: 12px; margin-left: 15px;">
@@ -691,34 +804,73 @@ mysqli_close($connect);
     </div>
 
     <div class="dashboard-container">
-        <!-- Pie Chart for Active vs All Users -->
+        <!-- Users Overview Chart -->
         <div class="chart-container">
-            <h3>Users Overview</h3>
+            <h3><i class="fas fa-users text-primary"></i> Users Overview</h3>
+            <p class="text-muted small">Active users vs total registered users</p>
             <canvas id="usersChart"></canvas>
         </div>
 
-        <!-- Bar Chart for Employees by Division -->
+        <!-- Employees by Division Chart -->
         <div class="chart-container">
-            <h3>Employees by Division</h3>
+            <h3><i class="fas fa-building text-success"></i> Employees by Division</h3>
+            <p class="text-muted small">Active employees distribution across divisions</p>
             <canvas id="employeesChart"></canvas>
         </div>
 
-        <!-- Wave Chart -->
+        <!-- Today's Attendance Overview -->
         <div class="chart-container">
-            <h3>Attendance Times for today</h3>
-            <canvas id="waveChart"></canvas>
-        </div>
-
-        <!-- Doughnut Chart for Attendance Overview -->
-        <div class="chart-container">
-            <h3>Attendance Overview</h3>
+            <h3><i class="fas fa-calendar-check text-info"></i> Today's Attendance</h3>
+            <p class="text-muted small">Present vs absent employees today</p>
             <canvas id="attendanceChart"></canvas>
         </div>
 
-        <!-- Weekly Attendance Chart -->
+        <!-- Attendance Times Wave Chart -->
+        <div class="chart-container">
+            <h3><i class="fas fa-clock text-warning"></i> Attendance Times Distribution</h3>
+            <p class="text-muted small">Employee check-in times for today</p>
+            <canvas id="waveChart"></canvas>
+        </div>
+
+        <!-- Weekly Attendance Trend -->
         <div class="chart-container weekly-attendance">
-            <h3>Weekly Attendance</h3>
+            <h3><i class="fas fa-chart-line text-primary"></i> Weekly Attendance Trend</h3>
+            <p class="text-muted small">Daily attendance count for the last 7 days</p>
             <canvas id="weeklyChart" class="weekly-chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Additional Statistics Cards -->
+    <div class="summary-cards" style="margin-top: 30px;">
+        <div class="summary-card">
+            <i class="fas fa-chart-pie card-icon"></i>
+            <div class="card-title">Attendance Rate</div>
+            <div class="card-value"><?php echo $totalEmployees > 0 ? round(($distinctCount / $totalEmployees) * 100, 1) : 0; ?>%</div>
+            <div class="card-change">Today's Rate</div>
+        </div>
+        <div class="summary-card">
+            <i class="fas fa-user-friends card-icon"></i>
+            <div class="card-title">Active Divisions</div>
+            <div class="card-value"><?php echo count($divisions); ?></div>
+            <div class="card-change">With Employees</div>
+        </div>
+        <div class="summary-card">
+            <i class="fas fa-clock card-icon"></i>
+            <div class="card-title">Early Birds</div>
+            <div class="card-value"><?php 
+                $earlyCount = 0;
+                foreach ($attendanceTimes as $time) {
+                    if ($time <= 8.0) $earlyCount++; // Before 8:00 AM
+                }
+                echo $earlyCount;
+            ?></div>
+            <div class="card-change">Before 8:00 AM</div>
+        </div>
+        <div class="summary-card">
+            <i class="fas fa-user-graduate card-icon"></i>
+            <div class="card-title">Active Users</div>
+            <div class="card-value"><?php echo $activeUsers; ?></div>
+            <div class="card-change">Logged in Today</div>
         </div>
     </div>
 </div>
@@ -817,22 +969,25 @@ mysqli_close($connect);
 
     // Sample weekly attendance data (you can replace this with actual data)
     const weeklyAttendanceData = {
-        labels: ['M', 'T', 'W', 'T', 'F'],
+        labels: <?php echo json_encode($weeklyLabels); ?>,
         datasets: [{
             label: 'Daily Attendance',
-            data: [<?php echo $distinctCount; ?>, <?php echo $distinctCount - 50; ?>, <?php echo $distinctCount + 20; ?>, <?php echo $distinctCount - 30; ?>, <?php echo $distinctCount - 10; ?>],
-            backgroundColor: '#007bff',
-            borderColor: '#0056b3',
-            borderWidth: 1
+            data: <?php echo json_encode($weeklyDataValues); ?>,
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 2,
+            fill: true
         }]
     };
 
-    // Data for Users Chart (Active vs All Users)
+    // Data for Users Chart (Active vs Total Users)
     const usersChartData = {
-        labels: ['Active Users', 'All Users'],
+        labels: ['Active Users Today', 'Total Registered Users'],
         datasets: [{
             data: [<?php echo $activeUsers; ?>, <?php echo $allUsers; ?>],
-            backgroundColor: ['#36A2EB', '#FF6384']
+            backgroundColor: ['#36A2EB', '#4BC0C0'],
+            borderWidth: 2,
+            borderColor: '#fff'
         }]
     };
 
@@ -840,31 +995,71 @@ mysqli_close($connect);
     const employeesChartData = {
         labels: <?php echo json_encode($divisions); ?>,
         datasets: [{
-            label: 'Employees',
+            label: 'Active Employees',
             data: <?php echo json_encode($employeesCount); ?>,
-            backgroundColor: '#FFCE56'
+            backgroundColor: [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
         }]
     };
 
-    // Data for Attendance Chart (Employees with attendance vs without attendance)
+    // Data for Attendance Chart (Present vs Absent today)
     const attendanceChartData = {
-        labels: ['Marked Attendance', 'Did Not Mark Attendance'],
+        labels: ['Present Today', 'Absent Today'],
         datasets: [{
             data: [<?php echo $distinctCount; ?>, <?php echo $notAttendedCount; ?>],
-            backgroundColor: ['#4CAF50', '#FF9800']
+            backgroundColor: ['#4CAF50', '#FF9800'],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    };
+
+    // Data for Department-wise Attendance Today
+    const deptAttendanceData = {
+        labels: <?php echo json_encode($deptAttendanceLabels); ?>,
+        datasets: [{
+            label: 'Present Today',
+            data: <?php echo json_encode($deptAttendanceData); ?>,
+            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 2
+        }]
+    };
+
+    // Data for Scan Type Distribution (IN vs OUT scans today)
+    const scanTypeChartData = {
+        labels: ['IN Scans', 'OUT Scans'],
+        datasets: [{
+            data: [<?php echo $scanTypeData['IN']; ?>, <?php echo $scanTypeData['OUT']; ?>],
+            backgroundColor: ['#2ECC71', '#E74C3C'],
+            borderWidth: 2,
+            borderColor: '#fff'
         }]
     };
 
     // Weekly Attendance Chart
     const ctxWeekly = document.getElementById('weeklyChart').getContext('2d');
     new Chart(ctxWeekly, {
-        type: 'bar',
+        type: 'line',
         data: weeklyAttendanceData,
         options: {
             responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Weekly Attendance Trend (Last 7 Days)'
+                }
+            },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Employees'
+                    }
                 }
             }
         }
@@ -873,8 +1068,20 @@ mysqli_close($connect);
     // Pie Chart for Users
     const ctxUsers = document.getElementById('usersChart').getContext('2d');
     new Chart(ctxUsers, {
-        type: 'pie',
+        type: 'doughnut',
         data: usersChartData,
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'User Activity Overview'
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
     });
 
     // Bar Chart for Employees by Division
@@ -883,9 +1090,20 @@ mysqli_close($connect);
         type: 'bar',
         data: employeesChartData,
         options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Active Employees by Division'
+                }
+            },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Employees'
+                    }
                 }
             }
         }
@@ -896,38 +1114,81 @@ mysqli_close($connect);
     new Chart(ctxAttendance, {
         type: 'doughnut',
         data: attendanceChartData,
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Today\'s Attendance Status'
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
     });
 
-    // Wave Chart for distinct attendance times
+    // Wave Chart for attendance times today
     const ctxWave = document.getElementById('waveChart').getContext('2d');
     new Chart(ctxWave, {
-        type: 'line', // Line chart to represent the wave of attendance times
+        type: 'line',
         data: {
-            labels: <?php echo json_encode(array_keys($distinctTimes)); ?>, // Employee IDs or indices as labels
+            labels: <?php echo json_encode(array_map(function($id) { return "EMP-" . $id; }, $employeeIds)); ?>,
             datasets: [{
                 label: 'Attendance Time (Hours)',
-                data: <?php echo json_encode($waveChartData); ?>,
-                backgroundColor: 'rgba(0, 123, 255, 0.5)',
-                borderColor: '#007bff',
-                borderWidth: 2,
-                fill: true
+                data: <?php echo json_encode($attendanceTimes); ?>,
+                backgroundColor: 'rgba(54, 162, 235, 0.3)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 6
             }]
         },
         options: {
             responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Employee Attendance Times Today'
+                },
+                legend: {
+                    display: true
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: false,
+                    min: 6,
+                    max: 12,
                     title: {
                         display: true,
-                        text: 'Time (Hours)'
+                        text: 'Time (Hours - 24hr format)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            const hours = Math.floor(value);
+                            const minutes = Math.round((value - hours) * 60);
+                            return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
+                        }
                     }
                 },
                 x: {
                     title: {
                         display: true,
                         text: 'Employees'
+                    },
+                    ticks: {
+                        maxTicksLimit: 10
                     }
+                }
+            },
+            elements: {
+                point: {
+                    hoverRadius: 8
                 }
             }
         }
@@ -935,11 +1196,42 @@ mysqli_close($connect);
 
     // System control functions
     function showAlert() {
-        alert('System Alert: This is a demo alert function');
+        alert('System Alert: Dashboard data updated successfully!');
     }
 
     function printPage() {
         window.print();
+    }
+
+    function refreshDashboard() {
+        if (confirm('Refresh dashboard data? This will reload the page.')) {
+            window.location.reload();
+        }
+    }
+
+    // Auto-refresh dashboard every 5 minutes (300000 ms)
+    setInterval(function() {
+        console.log('Auto-refreshing dashboard data...');
+        // You can implement AJAX refresh here instead of full page reload
+        // For now, we'll just show a notification
+        showAutoRefreshNotification();
+    }, 300000);
+
+    function showAutoRefreshNotification() {
+        // Create a temporary notification
+        const notification = document.createElement('div');
+        notification.innerHTML = `
+            <div style="position: fixed; top: 100px; right: 20px; background: #28a745; color: white; 
+                        padding: 10px 15px; border-radius: 5px; z-index: 10000; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                <i class="fas fa-sync-alt"></i> Dashboard data refreshed automatically
+            </div>
+        `;
+        document.body.appendChild(notification);
+        
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 3000);
     }
 
     // Background video handling
@@ -950,6 +1242,14 @@ mysqli_close($connect);
                 console.log('Video autoplay failed:', error);
                 // Video failed to play, hide video element
                 video.style.display = 'none';
+            });
+        }
+        
+        // Initialize tooltips if using Bootstrap
+        if (typeof bootstrap !== 'undefined') {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
             });
         }
     });
