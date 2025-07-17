@@ -2,6 +2,9 @@
 session_start();
 include('./dbc.php');
 
+// Set timezone for accurate timestamps
+date_default_timezone_set('Asia/Colombo'); // Sri Lanka timezone
+
 // Check if user is authenticated
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -10,7 +13,6 @@ if (!isset($_SESSION['user_id'])) {
 
 // Get current user info
 $current_user = isset($_SESSION['username']) ? $_SESSION['username'] : 'SLPA User';
-$current_time = date('Y-m-d H:i:s');
 ?>
 
 <!DOCTYPE html>
@@ -607,6 +609,9 @@ $current_time = date('Y-m-d H:i:s');
     <?php
     // Process form submission
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['report_type'])) {
+        // Generate timestamp when report is actually created
+        $report_generated_time = date('Y-m-d H:i:s');
+        
         $report_type = $_POST['report_type'];
         $from_date = $_POST['from_date'];
         $to_date = $_POST['to_date'];
@@ -749,7 +754,10 @@ $current_time = date('Y-m-d H:i:s');
                                 </div>
                                 <div class="col-md-6">
                                     <h6 class="mb-2"><i class="fas fa-clock me-2 text-primary"></i>Generated</h6>
-                                    <p class="mb-0"><?php echo date('M d, Y \a\t H:i:s', strtotime($current_time)); ?></p>
+                                    <p class="mb-0">
+                                        <strong><?php echo date('M d, Y at H:i:s', strtotime($report_generated_time)); ?></strong>
+                                        <br><small class="text-muted">(Sri Lanka Time)</small>
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -906,19 +914,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update current time every second
     function updateCurrentTime() {
         const now = new Date();
-        const options = { 
-            year: 'numeric', 
-            month: 'short', 
-            day: '2-digit', 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit',
-            hour12: false
-        };
-        const timeString = now.toLocaleDateString('en-US', options).replace(',', '');
+        
+        // Create a date object with Sri Lanka timezone offset (+5:30)
+        const sriLankaTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+        
+        // Format date components
+        const year = sriLankaTime.getUTCFullYear();
+        const month = sriLankaTime.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+        const day = String(sriLankaTime.getUTCDate()).padStart(2, '0');
+        const hours = String(sriLankaTime.getUTCHours()).padStart(2, '0');
+        const minutes = String(sriLankaTime.getUTCMinutes()).padStart(2, '0');
+        const seconds = String(sriLankaTime.getUTCSeconds()).padStart(2, '0');
+        
+        // Create clean formatted string
+        const formattedDateTime = `${month} ${day}, ${year} ${hours}:${minutes}:${seconds}`;
+        
         const timeDisplay = document.getElementById('timeDisplay');
         if (timeDisplay) {
-            timeDisplay.textContent = timeString;
+            timeDisplay.textContent = formattedDateTime;
         }
     }
     
@@ -1098,39 +1111,113 @@ document.addEventListener('DOMContentLoaded', function() {
         printStyle.innerHTML = `
             @page {
                 size: A4;
-                margin: 0.5in;
+                margin: 0.3in;
             }
             @media print {
                 body { 
-                    font-size: 12px !important; 
+                    font-size: 10px !important; 
                     background: white !important;
                     color: black !important;
+                    line-height: 1.2 !important;
                 }
                 .report-header {
                     background: #2c3e50 !important;
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
                     color: white !important;
+                    padding: 15px !important;
+                    font-size: 14px !important;
+                }
+                .report-header h1 {
+                    font-size: 18px !important;
+                    margin-bottom: 5px !important;
+                }
+                .report-header p {
+                    font-size: 12px !important;
                 }
                 .slpa-logo {
                     background: white !important;
                     color: #2c3e50 !important;
+                    width: 40px !important;
+                    height: 40px !important;
+                    font-size: 16px !important;
                 }
                 .summary-card, .table-container, .report-meta {
                     border: 1px solid #ddd !important;
                     box-shadow: none !important;
                     break-inside: avoid;
+                    margin-bottom: 10px !important;
+                }
+                .summary-card {
+                    padding: 8px !important;
+                }
+                .summary-card h4 {
+                    font-size: 11px !important;
+                    margin-bottom: 3px !important;
+                }
+                .summary-card .number {
+                    font-size: 16px !important;
+                    margin-bottom: 2px !important;
+                }
+                .summary-card small {
+                    font-size: 8px !important;
+                }
+                .report-meta {
+                    padding: 10px !important;
+                    font-size: 9px !important;
+                }
+                .report-meta h6 {
+                    font-size: 10px !important;
+                    margin-bottom: 2px !important;
+                }
+                .report-meta p {
+                    font-size: 9px !important;
+                    margin-bottom: 0 !important;
+                }
+                .table {
+                    font-size: 8px !important;
+                    margin-bottom: 0 !important;
                 }
                 .table thead th {
                     background: #2c3e50 !important;
                     color: white !important;
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
+                    padding: 4px 3px !important;
+                    font-size: 8px !important;
+                    border: 1px solid #444 !important;
+                    text-align: center !important;
+                }
+                .table tbody td {
+                    padding: 3px 2px !important;
+                    font-size: 7px !important;
+                    border: 1px solid #ddd !important;
+                    line-height: 1.1 !important;
+                    vertical-align: top !important;
+                }
+                .table tbody tr {
+                    height: auto !important;
+                    page-break-inside: avoid;
+                }
+                .avatar-sm {
+                    width: 16px !important;
+                    height: 16px !important;
+                    font-size: 7px !important;
+                    margin-right: 2px !important;
+                }
+                .badge {
+                    font-size: 6px !important;
+                    padding: 1px 3px !important;
+                    margin-right: 2px !important;
                 }
                 .status-badge {
                     border: 1px solid #ccc !important;
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
+                    padding: 1px 4px !important;
+                    font-size: 6px !important;
+                    margin-bottom: 1px !important;
+                    display: inline-block !important;
                 }
                 .status-in {
                     background: #d4edda !important;
@@ -1139,6 +1226,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 .status-out {
                     background: #f8d7da !important;
                     color: #721c24 !important;
+                }
+                .table-container {
+                    overflow: visible !important;
+                }
+                .table-responsive {
+                    overflow: visible !important;
+                }
+                .mt-4 {
+                    margin-top: 8px !important;
+                }
+                .bg-light {
+                    background: #f8f9fa !important;
+                    padding: 8px !important;
+                    border: 1px solid #ddd !important;
+                }
+                .bg-light h6 {
+                    font-size: 9px !important;
+                    margin-bottom: 2px !important;
+                }
+                .bg-light h4 {
+                    font-size: 12px !important;
+                    margin-bottom: 0 !important;
+                }
+                /* Make table columns narrower */
+                .table th:nth-child(1), .table td:nth-child(1) { width: 8% !important; } /* Employee ID */
+                .table th:nth-child(2), .table td:nth-child(2) { width: 18% !important; } /* Employee Name */
+                .table th:nth-child(3), .table td:nth-child(3) { width: 15% !important; } /* Division */
+                .table th:nth-child(4), .table td:nth-child(4) { width: 15% !important; } /* Section */
+                .table th:nth-child(5), .table td:nth-child(5) { width: 12% !important; } /* Date */
+                .table th:nth-child(6), .table td:nth-child(6) { width: 16% !important; } /* Check In */
+                .table th:nth-child(7), .table td:nth-child(7) { width: 16% !important; } /* Check Out */
+                /* Reduce spacing */
+                .row {
+                    margin-bottom: 5px !important;
+                }
+                .col-md-3 {
+                    padding: 2px !important;
+                }
+                .col-md-4 {
+                    padding: 2px !important;
                 }
             }
         `;

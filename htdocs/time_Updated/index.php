@@ -607,40 +607,84 @@ mysqli_close($connect);
         }
 
         .chart-container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafb 100%);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             text-align: center;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            border-radius: 16px 16px 0 0;
         }
 
         .chart-container:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
         }
 
         .chart-container h3 {
-            font-size: 18px;
-            margin-bottom: 5px;
+            font-size: 20px;
+            margin-bottom: 8px;
             color: #2c3e50;
-            font-weight: 700;
+            font-weight: 800;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .chart-container p {
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #6c757d;
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        .chart-stats {
+            display: flex;
+            justify-content: space-around;
             margin-bottom: 15px;
-            font-size: 12px;
+            padding: 10px;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         canvas {
             width: 100% !important;
-            height: 280px !important;
-            margin-top: 10px;
+            height: 320px !important;
+            margin-top: 15px;
         }
 
         .weekly-attendance {
@@ -806,36 +850,162 @@ mysqli_close($connect);
     <div class="dashboard-container">
         <!-- Users Overview Chart -->
         <div class="chart-container">
-            <h3><i class="fas fa-users text-primary"></i> Users Overview</h3>
-            <p class="text-muted small">Active users vs total registered users</p>
+            <h3><i class="fas fa-users text-primary"></i> User Activity</h3>
+            <p class="text-muted small">System login activity comparison</p>
+            <div class="chart-stats">
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo $activeUsers; ?></div>
+                    <div class="stat-label">Active Today</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo $allUsers; ?></div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo $allUsers > 0 ? round(($activeUsers / $allUsers) * 100, 1) : 0; ?>%</div>
+                    <div class="stat-label">Login Rate</div>
+                </div>
+            </div>
             <canvas id="usersChart"></canvas>
         </div>
 
         <!-- Employees by Division Chart -->
         <div class="chart-container">
-            <h3><i class="fas fa-building text-success"></i> Employees by Division</h3>
-            <p class="text-muted small">Active employees distribution across divisions</p>
+            <h3><i class="fas fa-building text-success"></i> Division Distribution</h3>
+            <p class="text-muted small">Active employee count per department</p>
+            <div class="chart-stats">
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo count($divisions); ?></div>
+                    <div class="stat-label">Active Divisions</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo $totalEmployees; ?></div>
+                    <div class="stat-label">Total Employees</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo count($divisions) > 0 ? round($totalEmployees / count($divisions), 1) : 0; ?></div>
+                    <div class="stat-label">Avg/Division</div>
+                </div>
+            </div>
             <canvas id="employeesChart"></canvas>
         </div>
 
         <!-- Today's Attendance Overview -->
         <div class="chart-container">
-            <h3><i class="fas fa-calendar-check text-info"></i> Today's Attendance</h3>
-            <p class="text-muted small">Present vs absent employees today</p>
+            <h3><i class="fas fa-calendar-check text-info"></i> Attendance Status</h3>
+            <p class="text-muted small">Real-time attendance breakdown for today</p>
+            <div class="chart-stats">
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo $distinctCount; ?></div>
+                    <div class="stat-label">Present</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo $notAttendedCount; ?></div>
+                    <div class="stat-label">Absent</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo $totalEmployees > 0 ? round(($distinctCount / $totalEmployees) * 100, 1) : 0; ?>%</div>
+                    <div class="stat-label">Rate</div>
+                </div>
+            </div>
             <canvas id="attendanceChart"></canvas>
         </div>
 
-        <!-- Attendance Times Wave Chart -->
+        <!-- Gender Distribution Chart -->
         <div class="chart-container">
-            <h3><i class="fas fa-clock text-warning"></i> Attendance Times Distribution</h3>
-            <p class="text-muted small">Employee check-in times for today</p>
+            <h3><i class="fas fa-venus-mars text-warning"></i> Employee Demographics</h3>
+            <p class="text-muted small">Gender distribution of active employees</p>
+            <div class="chart-stats">
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo isset($genderCounts[0]) ? $genderCounts[0] : 0; ?></div>
+                    <div class="stat-label"><?php echo isset($genderLabels[0]) ? $genderLabels[0] : 'N/A'; ?></div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo isset($genderCounts[1]) ? $genderCounts[1] : 0; ?></div>
+                    <div class="stat-label"><?php echo isset($genderLabels[1]) ? $genderLabels[1] : 'N/A'; ?></div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php 
+                        $ratio = 0;
+                        if (isset($genderCounts[0]) && isset($genderCounts[1]) && $genderCounts[1] > 0) {
+                            $ratio = round($genderCounts[0] / $genderCounts[1], 2);
+                        }
+                        echo $ratio;
+                    ?></div>
+                    <div class="stat-label">Ratio</div>
+                </div>
+            </div>
+            <canvas id="genderChart"></canvas>
+        </div>
+
+        <!-- Attendance Times Distribution -->
+        <div class="chart-container">
+            <h3><i class="fas fa-clock text-info"></i> Check-in Timeline</h3>
+            <p class="text-muted small">Today's employee arrival pattern</p>
+            <div class="chart-stats">
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo count($attendanceTimes); ?></div>
+                    <div class="stat-label">Checked In</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php 
+                        if (!empty($attendanceTimes)) {
+                            $earliest = min($attendanceTimes);
+                            $hours = floor($earliest);
+                            $minutes = round(($earliest - $hours) * 60);
+                            echo sprintf('%02d:%02d', $hours, $minutes);
+                        } else {
+                            echo 'N/A';
+                        }
+                    ?></div>
+                    <div class="stat-label">Earliest</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php 
+                        if (!empty($attendanceTimes)) {
+                            $latest = max($attendanceTimes);
+                            $hours = floor($latest);
+                            $minutes = round(($latest - $hours) * 60);
+                            echo sprintf('%02d:%02d', $hours, $minutes);
+                        } else {
+                            echo 'N/A';
+                        }
+                    ?></div>
+                    <div class="stat-label">Latest</div>
+                </div>
+            </div>
             <canvas id="waveChart"></canvas>
         </div>
 
         <!-- Weekly Attendance Trend -->
         <div class="chart-container weekly-attendance">
-            <h3><i class="fas fa-chart-line text-primary"></i> Weekly Attendance Trend</h3>
-            <p class="text-muted small">Daily attendance count for the last 7 days</p>
+            <h3><i class="fas fa-chart-line text-primary"></i> Weekly Trend Analysis</h3>
+            <p class="text-muted small">7-day attendance pattern with trend indicators</p>
+            <div class="chart-stats">
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo array_sum($weeklyDataValues); ?></div>
+                    <div class="stat-label">Total Week</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo count($weeklyDataValues) > 0 ? round(array_sum($weeklyDataValues) / count($weeklyDataValues), 1) : 0; ?></div>
+                    <div class="stat-label">Daily Avg</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo !empty($weeklyDataValues) ? max($weeklyDataValues) : 0; ?></div>
+                    <div class="stat-label">Peak Day</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php 
+                        if (count($weeklyDataValues) >= 2) {
+                            $trend = end($weeklyDataValues) - prev($weeklyDataValues);
+                            echo $trend > 0 ? '+' . $trend : $trend;
+                        } else {
+                            echo '0';
+                        }
+                    ?></div>
+                    <div class="stat-label">Trend</div>
+                </div>
+            </div>
             <canvas id="weeklyChart" class="weekly-chart"></canvas>
         </div>
     </div>
@@ -967,78 +1137,150 @@ mysqli_close($connect);
         }
     });
 
-    // Sample weekly attendance data (you can replace this with actual data)
+    // Professional color schemes
+    const primaryColors = {
+        blue: '#3498db',
+        green: '#2ecc71',
+        orange: '#f39c12',
+        red: '#e74c3c',
+        purple: '#9b59b6',
+        teal: '#1abc9c',
+        indigo: '#6c5ce7',
+        pink: '#fd79a8'
+    };
+
+    const gradientColors = {
+        blueGradient: ['#667eea', '#764ba2'],
+        greenGradient: ['#11998e', '#38ef7d'],
+        orangeGradient: ['#ff9a9e', '#fecfef'],
+        redGradient: ['#667eea', '#764ba2'],
+        purpleGradient: ['#a8edea', '#fed6e3']
+    };
+
+    // Enhanced Weekly Attendance Data
     const weeklyAttendanceData = {
         labels: <?php echo json_encode($weeklyLabels); ?>,
         datasets: [{
             label: 'Daily Attendance',
             data: <?php echo json_encode($weeklyDataValues); ?>,
-            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 2,
-            fill: true
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            borderColor: '#667eea',
+            borderWidth: 4,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#667eea',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 3,
+            pointRadius: 8,
+            pointHoverRadius: 12,
+            pointHoverBackgroundColor: '#4834d4',
+            pointHoverBorderColor: '#ffffff',
+            pointHoverBorderWidth: 4
         }]
     };
 
-    // Data for Users Chart (Active vs Total Users)
+    // Enhanced Users Chart Data
     const usersChartData = {
-        labels: ['Active Users Today', 'Total Registered Users'],
+        labels: ['Active Today', 'Inactive Users'],
         datasets: [{
-            data: [<?php echo $activeUsers; ?>, <?php echo $allUsers; ?>],
-            backgroundColor: ['#36A2EB', '#4BC0C0'],
-            borderWidth: 2,
-            borderColor: '#fff'
+            data: [<?php echo $activeUsers; ?>, <?php echo $allUsers - $activeUsers; ?>],
+            backgroundColor: [
+                'rgba(52, 152, 219, 0.9)',
+                'rgba(149, 165, 166, 0.7)'
+            ],
+            borderColor: [
+                '#3498db',
+                '#95a5a6'
+            ],
+            borderWidth: 3,
+            hoverBackgroundColor: [
+                'rgba(52, 152, 219, 1)',
+                'rgba(149, 165, 166, 0.9)'
+            ],
+            hoverBorderWidth: 4
         }]
     };
 
-    // Data for Employees by Division Chart
+    // Enhanced Employees by Division Data
     const employeesChartData = {
         labels: <?php echo json_encode($divisions); ?>,
         datasets: [{
             label: 'Active Employees',
             data: <?php echo json_encode($employeesCount); ?>,
             backgroundColor: [
-                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
-                '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+                'rgba(46, 204, 113, 0.8)',
+                'rgba(52, 152, 219, 0.8)',
+                'rgba(155, 89, 182, 0.8)',
+                'rgba(241, 196, 15, 0.8)',
+                'rgba(230, 126, 34, 0.8)',
+                'rgba(231, 76, 60, 0.8)',
+                'rgba(26, 188, 156, 0.8)',
+                'rgba(108, 92, 231, 0.8)'
+            ],
+            borderColor: [
+                '#2ecc71',
+                '#3498db',
+                '#9b59b6',
+                '#f1c40f',
+                '#e67e22',
+                '#e74c3c',
+                '#1abc9c',
+                '#6c5ce7'
             ],
             borderWidth: 2,
-            borderColor: '#fff'
+            borderRadius: 8,
+            borderSkipped: false
         }]
     };
 
-    // Data for Attendance Chart (Present vs Absent today)
+    // Enhanced Attendance Chart Data
     const attendanceChartData = {
         labels: ['Present Today', 'Absent Today'],
         datasets: [{
             data: [<?php echo $distinctCount; ?>, <?php echo $notAttendedCount; ?>],
-            backgroundColor: ['#4CAF50', '#FF9800'],
-            borderWidth: 2,
-            borderColor: '#fff'
+            backgroundColor: [
+                'rgba(46, 204, 113, 0.9)',
+                'rgba(231, 76, 60, 0.7)'
+            ],
+            borderColor: [
+                '#2ecc71',
+                '#e74c3c'
+            ],
+            borderWidth: 3,
+            hoverBackgroundColor: [
+                'rgba(46, 204, 113, 1)',
+                'rgba(231, 76, 60, 0.9)'
+            ],
+            hoverBorderWidth: 4
         }]
     };
 
-    // Data for Department-wise Attendance Today
-    const deptAttendanceData = {
-        labels: <?php echo json_encode($deptAttendanceLabels); ?>,
+    // Gender Distribution Chart Data
+    const genderChartData = {
+        labels: <?php echo json_encode($genderLabels); ?>,
         datasets: [{
-            label: 'Present Today',
-            data: <?php echo json_encode($deptAttendanceData); ?>,
-            backgroundColor: 'rgba(75, 192, 192, 0.6)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 2
+            data: <?php echo json_encode($genderCounts); ?>,
+            backgroundColor: [
+                'rgba(108, 92, 231, 0.9)',
+                'rgba(253, 121, 168, 0.9)'
+            ],
+            borderColor: [
+                '#6c5ce7',
+                '#fd79a8'
+            ],
+            borderWidth: 3,
+            hoverBackgroundColor: [
+                'rgba(108, 92, 231, 1)',
+                'rgba(253, 121, 168, 1)'
+            ],
+            hoverBorderWidth: 4
         }]
     };
 
-    // Data for Scan Type Distribution (IN vs OUT scans today)
-    const scanTypeChartData = {
-        labels: ['IN Scans', 'OUT Scans'],
-        datasets: [{
-            data: [<?php echo $scanTypeData['IN']; ?>, <?php echo $scanTypeData['OUT']; ?>],
-            backgroundColor: ['#2ECC71', '#E74C3C'],
-            borderWidth: 2,
-            borderColor: '#fff'
-        }]
-    };
+    // Chart.js default settings
+    Chart.defaults.font.family = "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = '#2c3e50';
 
     // Weekly Attendance Chart
     const ctxWeekly = document.getElementById('weeklyChart').getContext('2d');
@@ -1047,116 +1289,322 @@ mysqli_close($connect);
         data: weeklyAttendanceData,
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 title: {
-                    display: true,
-                    text: 'Weekly Attendance Trend (Last 7 Days)'
+                    display: false
+                },
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#667eea',
+                    borderWidth: 2,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    titleFont: { weight: 'bold', size: 14 },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.parsed.y} employees attended`;
+                        }
+                    }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        lineWidth: 1
+                    },
+                    ticks: {
+                        color: '#7f8c8d',
+                        font: { size: 11, weight: '600' }
+                    },
                     title: {
                         display: true,
-                        text: 'Number of Employees'
+                        text: 'Attendance Count',
+                        color: '#2c3e50',
+                        font: { size: 12, weight: 'bold' }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#7f8c8d',
+                        font: { size: 11, weight: '600' }
                     }
                 }
+            },
+            elements: {
+                point: {
+                    hoverRadius: 12
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
         }
     });
 
-    // Pie Chart for Users
+    // Users Chart (Doughnut)
     const ctxUsers = document.getElementById('usersChart').getContext('2d');
     new Chart(ctxUsers, {
         type: 'doughnut',
         data: usersChartData,
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 title: {
-                    display: true,
-                    text: 'User Activity Overview'
+                    display: false
                 },
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: { size: 12, weight: '600' },
+                        color: '#2c3e50'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#3498db',
+                    borderWidth: 2,
+                    cornerRadius: 8,
+                    displayColors: true,
+                    titleFont: { weight: 'bold', size: 14 },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed * 100) / total).toFixed(1);
+                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                        }
+                    }
                 }
-            }
+            },
+            cutout: '60%'
         }
     });
 
-    // Bar Chart for Employees by Division
+    // Employees by Division Chart (Bar)
     const ctxEmployees = document.getElementById('employeesChart').getContext('2d');
     new Chart(ctxEmployees, {
         type: 'bar',
         data: employeesChartData,
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 title: {
-                    display: true,
-                    text: 'Active Employees by Division'
+                    display: false
+                },
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#2ecc71',
+                    borderWidth: 2,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    titleFont: { weight: 'bold', size: 14 },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.parsed.y} employees in ${context.label}`;
+                        }
+                    }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        lineWidth: 1
+                    },
+                    ticks: {
+                        color: '#7f8c8d',
+                        font: { size: 11, weight: '600' }
+                    },
                     title: {
                         display: true,
-                        text: 'Number of Employees'
+                        text: 'Employee Count',
+                        color: '#2c3e50',
+                        font: { size: 12, weight: 'bold' }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#7f8c8d',
+                        font: { size: 11, weight: '600' },
+                        maxRotation: 45
                     }
                 }
             }
         }
     });
 
-    // Doughnut Chart for Attendance
+    // Attendance Chart (Doughnut)
     const ctxAttendance = document.getElementById('attendanceChart').getContext('2d');
     new Chart(ctxAttendance, {
         type: 'doughnut',
         data: attendanceChartData,
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 title: {
-                    display: true,
-                    text: 'Today\'s Attendance Status'
+                    display: false
                 },
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: { size: 12, weight: '600' },
+                        color: '#2c3e50'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#2ecc71',
+                    borderWidth: 2,
+                    cornerRadius: 8,
+                    displayColors: true,
+                    titleFont: { weight: 'bold', size: 14 },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed * 100) / total).toFixed(1);
+                            return `${context.label}: ${context.parsed} employees (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '60%'
+        }
+    });
+
+    // Gender Distribution Chart (Pie)
+    const ctxGender = document.getElementById('genderChart').getContext('2d');
+    new Chart(ctxGender, {
+        type: 'pie',
+        data: genderChartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: false
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: { size: 12, weight: '600' },
+                        color: '#2c3e50'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#6c5ce7',
+                    borderWidth: 2,
+                    cornerRadius: 8,
+                    displayColors: true,
+                    titleFont: { weight: 'bold', size: 14 },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed * 100) / total).toFixed(1);
+                            return `${context.label}: ${context.parsed} employees (${percentage}%)`;
+                        }
+                    }
                 }
             }
         }
     });
 
-    // Wave Chart for attendance times today
+    // Attendance Times Wave Chart
     const ctxWave = document.getElementById('waveChart').getContext('2d');
     new Chart(ctxWave, {
         type: 'line',
         data: {
-            labels: <?php echo json_encode(array_map(function($id) { return "EMP-" . $id; }, $employeeIds)); ?>,
+            labels: <?php echo json_encode(array_map(function($id, $index) { return 'Employee ' . ($index + 1); }, $employeeIds, array_keys($employeeIds))); ?>,
             datasets: [{
-                label: 'Attendance Time (Hours)',
+                label: 'Check-in Time',
                 data: <?php echo json_encode($attendanceTimes); ?>,
-                backgroundColor: 'rgba(54, 162, 235, 0.3)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 3,
+                backgroundColor: 'rgba(26, 188, 156, 0.2)',
+                borderColor: '#1abc9c',
+                borderWidth: 4,
                 fill: true,
-                tension: 0.4,
-                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
-                pointRadius: 6
+                tension: 0.6,
+                pointBackgroundColor: '#1abc9c',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 3,
+                pointRadius: 6,
+                pointHoverRadius: 10,
+                pointHoverBackgroundColor: '#16a085',
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 4
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 title: {
-                    display: true,
-                    text: 'Employee Attendance Times Today'
+                    display: false
                 },
                 legend: {
-                    display: true
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#1abc9c',
+                    borderWidth: 2,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    titleFont: { weight: 'bold', size: 14 },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        label: function(context) {
+                            const timeValue = context.parsed.y;
+                            const hours = Math.floor(timeValue);
+                            const minutes = Math.round((timeValue - hours) * 60);
+                            const timeString = hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
+                            return `Check-in time: ${timeString}`;
+                        }
+                    }
                 }
             },
             scales: {
@@ -1164,32 +1612,54 @@ mysqli_close($connect);
                     beginAtZero: false,
                     min: 6,
                     max: 12,
-                    title: {
-                        display: true,
-                        text: 'Time (Hours - 24hr format)'
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        lineWidth: 1
                     },
                     ticks: {
+                        color: '#7f8c8d',
+                        font: { size: 11, weight: '600' },
                         callback: function(value) {
                             const hours = Math.floor(value);
                             const minutes = Math.round((value - hours) * 60);
                             return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
                         }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Check-in Time (24H Format)',
+                        color: '#2c3e50',
+                        font: { size: 12, weight: 'bold' }
                     }
                 },
                 x: {
-                    title: {
-                        display: true,
-                        text: 'Employees'
+                    grid: {
+                        display: false
                     },
                     ticks: {
-                        maxTicksLimit: 10
+                        color: '#7f8c8d',
+                        font: { size: 11, weight: '600' },
+                        maxTicksLimit: 8,
+                        callback: function(value, index) {
+                            return index % 2 === 0 ? this.getLabelForValue(value) : '';
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Employees (Ordered by Check-in Time)',
+                        color: '#2c3e50',
+                        font: { size: 12, weight: 'bold' }
                     }
                 }
             },
             elements: {
                 point: {
-                    hoverRadius: 8
+                    hoverRadius: 10
                 }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
         }
     });
