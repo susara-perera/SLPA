@@ -1,8 +1,28 @@
 <?php
-ob_start(); // Start output buffering
-include('includes/header.php');
+session_start();
+ob_start(); 
+
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php'); 
+    exit();
+}
+
+include('./dbc.php');
+include('includes/header2.php');
 include('includes/navbar.php');
-include('dbc.php');
+include('includes/check_access.php'); 
+
+// Define the page name
+$page = 'section.php';
+
+// Check if the user has access to this page
+if (!hasAccess($page)) {
+    echo "<div class='container'><div class='row mx-md-n8'><div class='col px-md-5'><h1>Access Denied</h1><p>You do not have permission to access this page.</p></div></div></div>";
+    include('includes/scripts.php');
+    include('includes/footer.php');
+    ob_end_flush(); 
+    exit();
+}
 
 $success_message = '';
 $error_message = '';
@@ -90,11 +110,31 @@ mysqli_close($connect);
     border: 2px solid #e9ecef;
     padding: 12px 15px;
     transition: all 0.3s ease;
+    font-size: 15px;
+    color: #495057;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .form-control-custom:focus {
     border-color: #28a745;
     box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    background-color: #fff;
+}
+
+select.form-control-custom {
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23666" d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+    padding-right: 40px;
+    background-color: white;
+}
+
+.form-control-custom::placeholder {
+    color: #adb5bd;
+    font-style: italic;
 }
 
 .btn-custom {
@@ -107,6 +147,23 @@ mysqli_close($connect);
     letter-spacing: 1px;
     transition: all 0.3s ease;
     color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-custom::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-custom:hover::before {
+    left: 100%;
 }
 
 .btn-custom:hover {
@@ -118,17 +175,19 @@ mysqli_close($connect);
 .btn-outline-custom {
     border: 2px solid #28a745;
     color: #28a745;
-    background: transparent;
+    background: white;
     border-radius: 10px;
     padding: 10px 25px;
     font-weight: 600;
     transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.1);
 }
 
 .btn-outline-custom:hover {
     background: #28a745;
     color: white;
     transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
 }
 
 .alert-custom {
@@ -283,6 +342,35 @@ mysqli_close($connect);
 .line-2 { top: 45%; width: 100px; right: 15%; }
 .line-3 { top: 65%; width: 120px; right: 25%; }
 .line-4 { top: 85%; width: 80px; right: 30%; }
+
+/* Additional professional enhancements */
+.card-custom {
+    position: relative;
+    overflow: hidden;
+}
+
+.card-custom::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.form-group {
+    position: relative;
+}
+
+.form-group label {
+    margin-bottom: 8px;
+    display: block;
+}
+
+.card-body-custom {
+    padding: 2rem !important;
+}
 </style>
 
 <div class="content-wrapper">
@@ -360,10 +448,10 @@ mysqli_close($connect);
                                     <i class="fas fa-check-circle mr-2"></i><?php echo $success_message; ?>
                                 </div>
                                 <div class="text-center mb-3">
-                                    <a href="section_Manage.php" class="btn btn-outline-custom">
+                                    <a href="section_Manage.php" class="btn btn-outline-custom btn-sm">
                                         <i class="fas fa-list mr-2"></i>View All Sections
                                     </a>
-                                    <a href="section.php" class="btn btn-custom ml-2">
+                                    <a href="section.php" class="btn btn-custom btn-sm ml-2">
                                         <i class="fas fa-plus mr-2"></i>Add Another
                                     </a>
                                 </div>
@@ -371,11 +459,11 @@ mysqli_close($connect);
 
                             <form method="POST" action="" id="sectionForm">
                                 <div class="form-group mb-4">
-                                    <label for="div1" class="form-label font-weight-bold">
+                                    <label for="div1" class="form-label font-weight-bold" style="color: #333; font-size: 16px;">
                                         <i class="fas fa-building text-success mr-2"></i>Select Division
                                     </label>
                                     <select name="div1" id="div1" class="form-control form-control-custom" required>
-                                        <option value="">Choose a division...</option>
+                                        <option value="" disabled selected>Select the division for this section</option>
                                         <?php foreach ($divisions as $division): ?>
                                             <option value="<?php echo htmlspecialchars($division['division_id']); ?>" 
                                                     <?php echo (isset($_POST['div1']) && $_POST['div1'] == $division['division_id']) ? 'selected' : ''; ?>>
@@ -383,10 +471,10 @@ mysqli_close($connect);
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <small class="form-text text-muted">Select the division for this section</small>
+                                    <small class="form-text" style="color: #6c757d; font-size: 13px;">Select the division for this section</small>
                                 </div>
                                 <div class="form-group mb-4">
-                                    <label for="sec" class="form-label font-weight-bold">
+                                    <label for="sec" class="form-label font-weight-bold" style="color: #333; font-size: 16px;">
                                         <i class="fas fa-sitemap text-success mr-2"></i>Section Name
                                     </label>
                                     <input class="form-control form-control-custom" 
@@ -395,13 +483,17 @@ mysqli_close($connect);
                                            id="sec" 
                                            value="<?php echo isset($_POST['sec']) ? htmlspecialchars($_POST['sec']) : ''; ?>"
                                            placeholder="Enter section name"
+                                           style="font-size: 15px;"
                                            required>
-                                    <small class="form-text text-muted">Enter the name for the new section</small>
+                                    <small class="form-text" style="color: #6c757d; font-size: 13px;">Enter the name for the new section</small>
                                 </div>
                                 <div class="text-center mt-4">
-                                    <button type="submit" class="btn btn-custom btn-lg px-5">
-                                        <i class="fas fa-save mr-2"></i>Create Section
+                                    <button type="submit" class="btn btn-custom btn-lg px-4 mr-3">
+                                        <i class="fas fa-save mr-2"></i>CREATE SECTION
                                     </button>
+                                    <a href="section_Manage.php" class="btn btn-outline-custom btn-lg px-4">
+                                        <i class="fas fa-times mr-2"></i>Cancel
+                                    </a>
                                 </div>
                             </form>
                         </div>

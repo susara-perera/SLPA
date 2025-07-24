@@ -1,17 +1,28 @@
 <?php
 session_start();
+ob_start(); 
 
-// Check if the user is logged in and has the correct access
-if (!isset($_SESSION['id']) || $_SESSION['role'] != 'master' || !in_array('section_Manage.php', $_SESSION['access'])) {
-    // Redirect to login page
-    header("Location: login.php");
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php'); 
     exit();
 }
 
-ob_start(); // Start output buffering
-include('includes/header.php');
+include('./dbc.php');
+include('includes/header2.php');
 include('includes/navbar.php');
-include('dbc.php');
+include('includes/check_access.php'); 
+
+// Define the page name
+$page = 'section_Manage.php';
+
+// Check if the user has access to this page
+if (!hasAccess($page)) {
+    echo "<div class='container'><div class='row mx-md-n8'><div class='col px-md-5'><h1>Access Denied</h1><p>You do not have permission to access this page.</p></div></div></div>";
+    include('includes/scripts.php');
+    include('includes/footer.php');
+    ob_end_flush(); 
+    exit();
+}
 
 $section_id = isset($_GET['section_id']) ? $_GET['section_id'] : null;
 $success_message = '';
@@ -101,8 +112,6 @@ if (!$section_id) {
         }
     }
 }
-
-mysqli_close($connect);
 ?>
 
 <style>
@@ -491,6 +500,8 @@ mysqli_close($connect);
 </div>
 
 <?php
+mysqli_close($connect);
+include('includes/scripts.php');
 include('includes/footer.php');
-ob_end_flush(); // End output buffering and send to browser
+ob_end_flush(); 
 ?>
