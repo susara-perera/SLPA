@@ -409,53 +409,334 @@ $current_user = isset($_SESSION['username']) ? $_SESSION['username'] : 'SLPA Use
             border-bottom: none;
         }
 
-        /* Print styles */
+        /* Print styles - Optimized for minimal pages */
         @media print {
-            .back-button, .btn-download, .header-controls {
+            @page {
+                size: A4;
+                margin: 0.3in 0.2in;
+            }
+            
+            * {
+                box-sizing: border-box;
+            }
+            
+            .back-button, .btn-download, .header-controls, .form-container {
                 display: none !important;
             }
             
+            body {
+                font-family: Arial, sans-serif !important;
+                font-size: 10px !important;
+                line-height: 1.2 !important;
+                background: white !important;
+                color: black !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
             .container-fluid {
-                margin-left: 0 !important;
+                margin: 0 !important;
                 width: 100% !important;
                 padding: 0 !important;
             }
             
             .report-header {
                 background: #2c3e50 !important;
-                print-color-adjust: exact;
-                -webkit-print-color-adjust: exact;
-                margin-bottom: 20px !important;
+                color: white !important;
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+                padding: 8px !important;
+                margin-bottom: 8px !important;
+                border-radius: 0 !important;
+                font-size: 10px !important;
             }
-
-            .form-container {
-                display: none !important;
+            
+            .report-header h1 {
+                font-size: 16px !important;
+                margin: 0 0 3px 0 !important;
+                font-weight: bold !important;
             }
-
+            
+            .report-header p {
+                font-size: 11px !important;
+                margin: 0 !important;
+                opacity: 0.9 !important;
+            }
+            
+            .slpa-logo {
+                width: 24px !important;
+                height: 24px !important;
+                font-size: 12px !important;
+                background: white !important;
+                color: #2c3e50 !important;
+            }
+            
             .report-container {
+                padding: 0 !important;
+                margin: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 20px !important;
+                background: transparent !important;
+            }
+            
+            /* Division/Section Header for Print */
+            .bg-primary {
+                background: #2c3e50 !important;
+                color: white !important;
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+                padding: 6px !important;
+                margin-bottom: 8px !important;
+                border-radius: 0 !important;
+                text-align: center !important;
+                page-break-inside: avoid;
+            }
+            
+            .bg-primary h4 {
+                font-size: 12px !important;
+                margin: 0 0 2px 0 !important;
+                font-weight: bold !important;
+            }
+            
+            .bg-primary h5 {
+                font-size: 10px !important;
+                margin: 0 !important;
+                font-weight: bold !important;
+            }
+            
+            /* Compact Summary Cards */
+            .summary-card {
+                padding: 6px 8px !important;
+                margin-bottom: 6px !important;
+                border: 1px solid #ddd !important;
+                box-shadow: none !important;
+                background: #f9f9f9 !important;
+                text-align: center !important;
+                page-break-inside: avoid;
+            }
+            
+            .summary-card h4 {
+                font-size: 10px !important;
+                margin: 0 0 3px 0 !important;
+                font-weight: bold !important;
+            }
+            
+            .summary-card .number {
+                font-size: 13px !important;
+                font-weight: bold !important;
+                margin: 0 !important;
+                line-height: 1.1 !important;
+            }
+            
+            .summary-card small {
+                font-size: 8px !important;
                 margin: 0 !important;
             }
-
-            .summary-card {
-                box-shadow: none !important;
-                border: 1px solid #ddd !important;
+            
+            /* Minimize row spacing */
+            .row {
+                margin: 0 !important;
             }
-
-            .table-container {
-                box-shadow: none !important;
-                border: 1px solid #ddd !important;
+            
+            .col-md-3 {
+                padding: 2px !important;
             }
-
-            body {
-                background: white !important;
-            }
-
+            
+            /* Compact Report Meta */
             .report-meta {
-                box-shadow: none !important;
+                padding: 6px 10px !important;
+                margin: 6px 0 !important;
+                font-size: 9px !important;
                 border: 1px solid #ddd !important;
+                box-shadow: none !important;
+                background: #f9f9f9 !important;
+                page-break-inside: avoid;
+            }
+            
+            .report-meta h6 {
+                font-size: 10px !important;
+                margin: 0 0 2px 0 !important;
+                font-weight: bold !important;
+            }
+            
+            .report-meta p {
+                font-size: 9px !important;
+                margin: 0 !important;
+            }
+            
+            /* Ultra-compact table */
+            .table-container {
+                margin: 6px 0 !important;
+                border: 1px solid #333 !important;
+                box-shadow: none !important;
+                page-break-inside: auto;
+            }
+            
+            .table {
+                font-size: 8px !important;
+                margin: 0 !important;
+                border-collapse: collapse !important;
+                width: 100% !important;
+            }
+            
+            .table thead th {
+                background: #2c3e50 !important;
+                color: white !important;
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+                padding: 3px 2px !important;
+                font-size: 8px !important;
+                font-weight: bold !important;
+                border: 1px solid #444 !important;
+                text-align: center !important;
+                vertical-align: middle !important;
+                line-height: 1.1 !important;
+            }
+            
+            .table tbody td {
+                padding: 3px 4px !important;
+                font-size: 8px !important;
+                border: 1px solid #ccc !important;
+                line-height: 1.2 !important;
+                vertical-align: top !important;
+                text-align: left !important;
+                overflow: hidden !important;
+                word-wrap: break-word !important;
+            }
+            
+            .table tbody tr {
+                height: auto !important;
+                page-break-inside: avoid;
+                border-bottom: 1px solid #ccc !important;
+            }
+            
+            /* Hide icons and decorative elements */
+            .fas, .fa {
+                display: none !important;
+            }
+            
+            /* Compact badges and avatars */
+            .badge {
+                font-size: 7px !important;
+                padding: 2px 3px !important;
+                margin: 0 1px 0 0 !important;
+                display: inline-block !important;
+            }
+            
+            .avatar-sm {
+                width: 10px !important;
+                height: 10px !important;
+                font-size: 7px !important;
+                margin-right: 3px !important;
+                display: inline-block !important;
+            }
+            
+            .status-badge {
+                font-size: 7px !important;
+                padding: 2px 4px !important;
+                margin: 0 !important;
+                display: inline-block !important;
+                border-radius: 3px !important;
+            }
+            
+            .status-in {
+                background: #d4edda !important;
+                color: #155724 !important;
+                border: 1px solid #c3e6cb !important;
+            }
+            
+            .status-out {
+                background: #f8d7da !important;
+                color: #721c24 !important;
+                border: 1px solid #f1b0b7 !important;
+            }
+            
+            /* Optimize column widths for 5 columns */
+            .table th:nth-child(1), .table td:nth-child(1) { width: 15% !important; } /* Employee ID */
+            .table th:nth-child(2), .table td:nth-child(2) { width: 25% !important; } /* Employee Name */
+            .table th:nth-child(3), .table td:nth-child(3) { width: 18% !important; } /* Date */
+            .table th:nth-child(4), .table td:nth-child(4) { width: 21% !important; } /* First Check In */
+            .table th:nth-child(5), .table td:nth-child(5) { width: 21% !important; } /* Last Check Out */
+            
+            /* Compact footer */
+            .mt-4 {
+                margin-top: 6px !important;
+            }
+            
+            .bg-light {
+                padding: 6px !important;
+                background: #f9f9f9 !important;
+                border: 1px solid #ddd !important;
+                font-size: 9px !important;
+                page-break-inside: avoid;
+            }
+            
+            .bg-light h6 {
+                font-size: 9px !important;
+                margin: 0 0 2px 0 !important;
+                font-weight: bold !important;
+            }
+            
+            .bg-light h4 {
+                font-size: 11px !important;
+                margin: 0 !important;
+                font-weight: bold !important;
+            }
+            
+            /* Force more rows per page */
+            .table tbody tr {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            
+            /* Reduce spacing everywhere */
+            .mb-4, .mb-3, .mb-2, .mb-1 {
+                margin-bottom: 4px !important;
+            }
+            
+            .mt-4, .mt-3, .mt-2, .mt-1 {
+                margin-top: 4px !important;
+            }
+            
+            .p-3 {
+                padding: 4px !important;
+            }
+            
+            /* Simplify text formatting */
+            .fw-bold, .text-muted, .text-success, .text-primary, .text-info {
+                font-weight: normal !important;
+                color: black !important;
+            }
+            
+            /* Remove unnecessary spacing */
+            .d-flex {
+                display: block !important;
+            }
+            
+            .align-items-center {
+                align-items: stretch !important;
+            }
+            
+            .flex-column {
+                flex-direction: row !important;
+            }
+            
+            /* Ensure page breaks work properly */
+            .table {
+                page-break-inside: auto;
+            }
+            
+            .table tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+            
+            .table thead {
+                display: table-header-group;
+            }
+            
+            .table tbody {
+                display: table-row-group;
             }
         }
 
@@ -626,6 +907,7 @@ $current_user = isset($_SESSION['username']) ? $_SESSION['username'] : 'SLPA Use
             $employee_ID = $_POST['employee_ID'];
             $sql = "SELECT a.employee_ID, 
                            COALESCE(e.employee_name, 'Unknown Employee') as employee_name, 
+                           a.fingerprint_id as fingerprint_device,
                            COALESCE(d.division_name, 'Unknown Division') as division_name, 
                            COALESCE(s.section_name, 'Unknown Section') as section_name, 
                            a.date_, a.scan_type, a.time_
@@ -634,7 +916,7 @@ $current_user = isset($_SESSION['username']) ? $_SESSION['username'] : 'SLPA Use
                     LEFT JOIN divisions d ON e.division = d.division_id
                     LEFT JOIN sections s ON e.section = s.section_id
                     WHERE a.employee_ID = ? AND a.date_ BETWEEN ? AND ?
-                    ORDER BY a.date_, a.time_";
+                    ORDER BY a.employee_ID ASC, a.date_, a.time_";
             
             $stmt = $connect->prepare($sql);
             $stmt->bind_param("sss", $employee_ID, $from_date, $to_date);
@@ -645,6 +927,7 @@ $current_user = isset($_SESSION['username']) ? $_SESSION['username'] : 'SLPA Use
             
             $sql = "SELECT a.employee_ID, 
                            COALESCE(e.employee_name, 'Unknown Employee') as employee_name, 
+                           a.fingerprint_id as fingerprint_device,
                            COALESCE(d.division_name, 'Unknown Division') as division_name, 
                            COALESCE(s.section_name, 'Unknown Section') as section_name, 
                            a.date_, a.scan_type, a.time_
@@ -669,7 +952,7 @@ $current_user = isset($_SESSION['username']) ? $_SESSION['username'] : 'SLPA Use
                 $types .= "s";
             }
             
-            $sql .= " ORDER BY a.date_, a.time_";
+            $sql .= " ORDER BY a.employee_ID ASC, a.date_, a.time_";
             
             $stmt = $connect->prepare($sql);
             $stmt->bind_param($types, ...$params);
@@ -687,58 +970,195 @@ $current_user = isset($_SESSION['username']) ? $_SESSION['username'] : 'SLPA Use
                 $attendance_data[$key] = [
                     'employee_ID' => $row['employee_ID'],
                     'employee_name' => $row['employee_name'],
+                    'fingerprint_device' => $row['fingerprint_device'],
                     'division_name' => $row['division_name'],
                     'section_name' => $row['section_name'],
                     'date_' => $row['date_'],
-                    'ontime' => [],
-                    'offtime' => []
+                    'check_in_times' => [],
+                    'check_out_times' => [],
+                    'check_in_devices' => [],
+                    'check_out_devices' => [],
+                    'first_check_in' => null,
+                    'last_check_out' => null,
+                    'first_check_in_device' => null,
+                    'last_check_out_device' => null
                 ];
             }
             
             if ($row['scan_type'] === 'IN') {
-                $attendance_data[$key]['ontime'][] = $row['time_'];
+                $attendance_data[$key]['check_in_times'][] = $row['time_'];
+                $attendance_data[$key]['check_in_devices'][] = $row['fingerprint_device'];
+                // Set first check-in if not set or if this time is earlier
+                if ($attendance_data[$key]['first_check_in'] === null || 
+                    $row['time_'] < $attendance_data[$key]['first_check_in']) {
+                    $attendance_data[$key]['first_check_in'] = $row['time_'];
+                    $attendance_data[$key]['first_check_in_device'] = $row['fingerprint_device'];
+                }
             } else {
-                $attendance_data[$key]['offtime'][] = $row['time_'];
+                $attendance_data[$key]['check_out_times'][] = $row['time_'];
+                $attendance_data[$key]['check_out_devices'][] = $row['fingerprint_device'];
+                // Set last check-out if not set or if this time is later
+                if ($attendance_data[$key]['last_check_out'] === null || 
+                    $row['time_'] > $attendance_data[$key]['last_check_out']) {
+                    $attendance_data[$key]['last_check_out'] = $row['time_'];
+                    $attendance_data[$key]['last_check_out_device'] = $row['fingerprint_device'];
+                }
             }
         }
 
         $total_records = count($attendance_data);
         $total_employees = count(array_unique(array_column($attendance_data, 'employee_ID')));
+        
+        // Calculate additional statistics
+        $total_check_ins = 0;
+        $total_check_outs = 0;
+        $total_working_hours = 0;
+        $complete_attendance_days = 0;
+        $unique_devices = [];
+        
+        foreach ($attendance_data as $record) {
+            $total_check_ins += count($record['check_in_times']);
+            $total_check_outs += count($record['check_out_times']);
+            
+            // Collect unique devices
+            $all_devices = array_merge($record['check_in_devices'], $record['check_out_devices']);
+            foreach ($all_devices as $device) {
+                $unique_devices[$device] = true;
+            }
+            
+            // Calculate working hours for complete attendance (has both first check-in and last check-out)
+            if ($record['first_check_in'] && $record['last_check_out']) {
+                $check_in_time = strtotime($record['first_check_in']);
+                $check_out_time = strtotime($record['last_check_out']);
+                $working_hours = ($check_out_time - $check_in_time) / 3600; // Convert to hours
+                $total_working_hours += $working_hours;
+                $complete_attendance_days++;
+            }
+        }
+        
+        $average_working_hours = $complete_attendance_days > 0 ? round($total_working_hours / $complete_attendance_days, 2) : 0;
+        $total_devices_used = count($unique_devices);
+
+        // Sort attendance data by employee ID in ascending order
+        uasort($attendance_data, function($a, $b) {
+            return strcmp($a['employee_ID'], $b['employee_ID']);
+        });
+
+        // Get division and section names for group reports
+        $division_name = '';
+        $section_name = '';
+        if ($report_type === 'group') {
+            if (!empty($division)) {
+                $div_query = "SELECT division_name FROM divisions WHERE division_id = ?";
+                $div_stmt = $connect->prepare($div_query);
+                $div_stmt->bind_param("s", $division);
+                $div_stmt->execute();
+                $div_result = $div_stmt->get_result();
+                if ($div_row = $div_result->fetch_assoc()) {
+                    $division_name = $div_row['division_name'];
+                }
+                $div_stmt->close();
+            }
+            
+            if (!empty($section) && $section != 'all') {
+                $sec_query = "SELECT section_name FROM sections WHERE section_id = ?";
+                $sec_stmt = $connect->prepare($sec_query);
+                $sec_stmt->bind_param("s", $section);
+                $sec_stmt->execute();
+                $sec_result = $sec_stmt->get_result();
+                if ($sec_row = $sec_result->fetch_assoc()) {
+                    $section_name = $sec_row['section_name'];
+                }
+                $sec_stmt->close();
+            } else if ($section == 'all') {
+                $section_name = 'All Sections';
+            }
+        }
 
         if ($total_records > 0) {
             ?>
             <!-- Report Results Section -->
             <div class="report-container fade-in-up">
+                <?php if ($report_type === 'group' && (!empty($division_name) || !empty($section_name))): ?>
+                <!-- Division and Section Header for Group Reports -->
+                <div class="text-center mb-4">
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <div class="bg-primary text-white p-3 rounded">
+                                <h4 class="mb-2">
+                                    <i class="fas fa-building me-2"></i>
+                                    <?php echo !empty($division_name) ? htmlspecialchars($division_name) : 'All Divisions'; ?>
+                                </h4>
+                                <h5 class="mb-0">
+                                    <i class="fas fa-sitemap me-2"></i>
+                                    <?php echo !empty($section_name) ? htmlspecialchars($section_name) : 'All Sections'; ?>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
                 <!-- Summary Cards -->
                 <div class="row mb-4">
                     <div class="col-md-3">
                         <div class="summary-card">
                             <h4>Total Records</h4>
                             <div class="number"><?php echo $total_records; ?></div>
-                            <small class="text-muted">Attendance entries</small>
+                            <small class="text-muted">Attendance days</small>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="summary-card">
-                            <h4>Employees</h4>
+                            <h4>Total Employees</h4>
                             <div class="number"><?php echo $total_employees; ?></div>
-                            <small class="text-muted">Total employees</small>
+                            <small class="text-muted">Unique employees</small>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="summary-card">
-                            <h4>Report Type</h4>
-                            <div class="number">
-                                <?php echo $report_type === 'individual' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-users"></i>'; ?>
-                            </div>
-                            <small class="text-muted"><?php echo ucfirst($report_type); ?></small>
+                            <h4>Total Check-ins</h4>
+                            <div class="number"><?php echo $total_check_ins; ?></div>
+                            <small class="text-muted">IN scans recorded</small>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="summary-card">
-                            <h4>Period</h4>
+                            <h4>Total Check-outs</h4>
+                            <div class="number"><?php echo $total_check_outs; ?></div>
+                            <small class="text-muted">OUT scans recorded</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Statistics Row -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="summary-card">
+                            <h4>Complete Days</h4>
+                            <div class="number"><?php echo $complete_attendance_days; ?></div>
+                            <small class="text-muted">Days with both IN & OUT</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-card">
+                            <h4>Avg. Working Hours</h4>
+                            <div class="number"><?php echo $average_working_hours; ?>h</div>
+                            <small class="text-muted">Per complete day</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-card">
+                            <h4>Devices Used</h4>
+                            <div class="number"><?php echo $total_devices_used; ?></div>
+                            <small class="text-muted">Fingerprint machines</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-card">
+                            <h4>Report Period</h4>
                             <div class="number"><?php echo ceil((strtotime($to_date) - strtotime($from_date)) / (60*60*24)) + 1; ?></div>
-                            <small class="text-muted">Days</small>
+                            <small class="text-muted">Days covered</small>
                         </div>
                     </div>
                 </div>
@@ -756,7 +1176,6 @@ $current_user = isset($_SESSION['username']) ? $_SESSION['username'] : 'SLPA Use
                                     <h6 class="mb-2"><i class="fas fa-clock me-2 text-primary"></i>Generated</h6>
                                     <p class="mb-0">
                                         <strong><?php echo date('M d, Y at H:i:s', strtotime($report_generated_time)); ?></strong>
-                                        <br><small class="text-muted">(Sri Lanka Time)</small>
                                     </p>
                                 </div>
                             </div>
@@ -783,11 +1202,9 @@ $current_user = isset($_SESSION['username']) ? $_SESSION['username'] : 'SLPA Use
                                 <tr>
                                     <th><i class="fas fa-hashtag me-2"></i>Employee ID</th>
                                     <th><i class="fas fa-user me-2"></i>Employee Name</th>
-                                    <th><i class="fas fa-building me-2"></i>Division</th>
-                                    <th><i class="fas fa-sitemap me-2"></i>Section</th>
                                     <th><i class="fas fa-calendar me-2"></i>Date</th>
-                                    <th><i class="fas fa-sign-in-alt me-2"></i>Check In</th>
-                                    <th><i class="fas fa-sign-out-alt me-2"></i>Check Out</th>
+                                    <th><i class="fas fa-sign-in-alt me-2"></i>First Check In</th>
+                                    <th><i class="fas fa-sign-out-alt me-2"></i>Last Check Out</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -811,30 +1228,38 @@ $current_user = isset($_SESSION['username']) ? $_SESSION['username'] : 'SLPA Use
                                             <?php echo htmlspecialchars($record['employee_name']); ?>
                                         </div>
                                     </td>
-                                    <td><?php echo htmlspecialchars($record['division_name']); ?></td>
-                                    <td><?php echo htmlspecialchars($record['section_name']); ?></td>
                                     <td>
                                         <div class="fw-bold"><?php echo date('M d, Y', strtotime($record['date_'])); ?></div>
                                         <small class="text-muted"><?php echo date('l', strtotime($record['date_'])); ?></small>
                                     </td>
                                     <td>
-                                        <?php if (!empty($record['ontime'])): ?>
-                                            <?php foreach ($record['ontime'] as $time): ?>
-                                                <span class="status-badge status-in d-block mb-1">
-                                                    <i class="fas fa-sign-in-alt me-1"></i><?php echo htmlspecialchars($time); ?>
+                                        <?php if ($record['first_check_in']): ?>
+                                            <div class="d-flex flex-column">
+                                                <span class="status-badge status-in mb-1">
+                                                    <i class="fas fa-sign-in-alt me-1"></i>
+                                                    <?php echo htmlspecialchars(date('H:i:s', strtotime($record['first_check_in']))); ?>
                                                 </span>
-                                            <?php endforeach; ?>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-fingerprint me-1"></i>
+                                                    <?php echo htmlspecialchars($record['first_check_in_device']); ?>
+                                                </small>
+                                            </div>
                                         <?php else: ?>
                                             <span class="text-muted">No check-in</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <?php if (!empty($record['offtime'])): ?>
-                                            <?php foreach ($record['offtime'] as $time): ?>
-                                                <span class="status-badge status-out d-block mb-1">
-                                                    <i class="fas fa-sign-out-alt me-1"></i><?php echo htmlspecialchars($time); ?>
+                                        <?php if ($record['last_check_out']): ?>
+                                            <div class="d-flex flex-column">
+                                                <span class="status-badge status-out mb-1">
+                                                    <i class="fas fa-sign-out-alt me-1"></i>
+                                                    <?php echo htmlspecialchars(date('H:i:s', strtotime($record['last_check_out']))); ?>
                                                 </span>
-                                            <?php endforeach; ?>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-fingerprint me-1"></i>
+                                                    <?php echo htmlspecialchars($record['last_check_out_device']); ?>
+                                                </small>
+                                            </div>
                                         <?php else: ?>
                                             <span class="text-muted">No check-out</span>
                                         <?php endif; ?>
@@ -1100,187 +1525,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500);
     }
 
-    // Enhanced print functionality for PDF generation
+    // Compact print functionality for minimal pages
     window.printReport = function() {
-        // Hide unnecessary elements before printing
-        const elementsToHide = document.querySelectorAll('.btn-download, .back-button, .form-container');
-        elementsToHide.forEach(el => el.style.display = 'none');
-        
-        // Add print-specific styles for better PDF output
-        const printStyle = document.createElement('style');
-        printStyle.innerHTML = `
-            @page {
-                size: A4;
-                margin: 0.3in;
-            }
-            @media print {
-                body { 
-                    font-size: 10px !important; 
-                    background: white !important;
-                    color: black !important;
-                    line-height: 1.2 !important;
-                }
-                .report-header {
-                    background: #2c3e50 !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                    color: white !important;
-                    padding: 15px !important;
-                    font-size: 14px !important;
-                }
-                .report-header h1 {
-                    font-size: 18px !important;
-                    margin-bottom: 5px !important;
-                }
-                .report-header p {
-                    font-size: 12px !important;
-                }
-                .slpa-logo {
-                    background: white !important;
-                    color: #2c3e50 !important;
-                    width: 40px !important;
-                    height: 40px !important;
-                    font-size: 16px !important;
-                }
-                .summary-card, .table-container, .report-meta {
-                    border: 1px solid #ddd !important;
-                    box-shadow: none !important;
-                    break-inside: avoid;
-                    margin-bottom: 10px !important;
-                }
-                .summary-card {
-                    padding: 8px !important;
-                }
-                .summary-card h4 {
-                    font-size: 11px !important;
-                    margin-bottom: 3px !important;
-                }
-                .summary-card .number {
-                    font-size: 16px !important;
-                    margin-bottom: 2px !important;
-                }
-                .summary-card small {
-                    font-size: 8px !important;
-                }
-                .report-meta {
-                    padding: 10px !important;
-                    font-size: 9px !important;
-                }
-                .report-meta h6 {
-                    font-size: 10px !important;
-                    margin-bottom: 2px !important;
-                }
-                .report-meta p {
-                    font-size: 9px !important;
-                    margin-bottom: 0 !important;
-                }
-                .table {
-                    font-size: 8px !important;
-                    margin-bottom: 0 !important;
-                }
-                .table thead th {
-                    background: #2c3e50 !important;
-                    color: white !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                    padding: 4px 3px !important;
-                    font-size: 8px !important;
-                    border: 1px solid #444 !important;
-                    text-align: center !important;
-                }
-                .table tbody td {
-                    padding: 3px 2px !important;
-                    font-size: 7px !important;
-                    border: 1px solid #ddd !important;
-                    line-height: 1.1 !important;
-                    vertical-align: top !important;
-                }
-                .table tbody tr {
-                    height: auto !important;
-                    page-break-inside: avoid;
-                }
-                .avatar-sm {
-                    width: 16px !important;
-                    height: 16px !important;
-                    font-size: 7px !important;
-                    margin-right: 2px !important;
-                }
-                .badge {
-                    font-size: 6px !important;
-                    padding: 1px 3px !important;
-                    margin-right: 2px !important;
-                }
-                .status-badge {
-                    border: 1px solid #ccc !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                    padding: 1px 4px !important;
-                    font-size: 6px !important;
-                    margin-bottom: 1px !important;
-                    display: inline-block !important;
-                }
-                .status-in {
-                    background: #d4edda !important;
-                    color: #155724 !important;
-                }
-                .status-out {
-                    background: #f8d7da !important;
-                    color: #721c24 !important;
-                }
-                .table-container {
-                    overflow: visible !important;
-                }
-                .table-responsive {
-                    overflow: visible !important;
-                }
-                .mt-4 {
-                    margin-top: 8px !important;
-                }
-                .bg-light {
-                    background: #f8f9fa !important;
-                    padding: 8px !important;
-                    border: 1px solid #ddd !important;
-                }
-                .bg-light h6 {
-                    font-size: 9px !important;
-                    margin-bottom: 2px !important;
-                }
-                .bg-light h4 {
-                    font-size: 12px !important;
-                    margin-bottom: 0 !important;
-                }
-                /* Make table columns narrower */
-                .table th:nth-child(1), .table td:nth-child(1) { width: 8% !important; } /* Employee ID */
-                .table th:nth-child(2), .table td:nth-child(2) { width: 18% !important; } /* Employee Name */
-                .table th:nth-child(3), .table td:nth-child(3) { width: 15% !important; } /* Division */
-                .table th:nth-child(4), .table td:nth-child(4) { width: 15% !important; } /* Section */
-                .table th:nth-child(5), .table td:nth-child(5) { width: 12% !important; } /* Date */
-                .table th:nth-child(6), .table td:nth-child(6) { width: 16% !important; } /* Check In */
-                .table th:nth-child(7), .table td:nth-child(7) { width: 16% !important; } /* Check Out */
-                /* Reduce spacing */
-                .row {
-                    margin-bottom: 5px !important;
-                }
-                .col-md-3 {
-                    padding: 2px !important;
-                }
-                .col-md-4 {
-                    padding: 2px !important;
-                }
-            }
-        `;
-        document.head.appendChild(printStyle);
-        
         // Set page title for PDF filename
         const originalTitle = document.title;
-        document.title = 'SLPA_Attendance_Report_' + new Date().toISOString().split('T')[0];
+        document.title = 'SLPA_Compact_Report_' + new Date().toISOString().split('T')[0];
         
+        // Use the optimized print styles already defined in CSS
         window.print();
         
-        // Restore elements and title after printing
+        // Restore title after printing
         setTimeout(() => {
-            elementsToHide.forEach(el => el.style.display = '');
-            document.head.removeChild(printStyle);
             document.title = originalTitle;
         }, 1000);
     };
