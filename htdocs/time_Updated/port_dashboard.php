@@ -501,33 +501,31 @@ if (!isset($_SESSION['port_user']) || !isset($_SESSION['port_name'])) {
         <div class="col-md-6">
             <div class="card p-4">
                 <h5 class="mb-3">Assign Employee</h5>
-                <form>
+                <form id="assignEmployeeForm">
                     <div class="mb-2">
                         <label class="form-label">Employee ID</label>
-                        <input type="text" class="form-control" placeholder="Enter Employee ID">
+                        <input type="text" id="assign_employee_id" class="form-control" placeholder="Enter Employee ID" onchange="loadEmployeeDetailsForAssign(this.value)">
                     </div>
                     <div class="mb-2">
                         <label class="form-label">Name</label>
-                        <input type="text" class="form-control" placeholder="Enter Employee Name">
+                        <input type="text" id="assign_employee_name" class="form-control" placeholder="Enter Employee Name" readonly>
                     </div>
-                  
                     <div class="mb-2">
                         <label class="form-label">Division</label>
-                        <select class="form-select">
-                            <option selected>Select Division</option>
-                            <option>ECT</option>
-                            <option>JCT</option>
-                            <option>ITT</option>
-                        </select>
+                        <input type="text" id="assign_division" class="form-control" placeholder="Division" readonly>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Section</label>
+                        <input type="text" id="assign_section" class="form-control" placeholder="Section" readonly>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Role</label>
-                        <select class="form-select">
-                            <option selected>Select Role</option>
-                            <option>Granty Crane Operator</option>
-                            <option>Transfer Crane Operator</option>
-                            <option>Primover Operator</option>
-                            <option>Signal Man</option>
+                        <select id="assign_role" class="form-select" required>
+                            <option value="">Select Role</option>
+                            <option value="Granty Crane Operator">Granty Crane Operator</option>
+                            <option value="Transfer Crane Operator">Transfer Crane Operator</option>
+                            <option value="Primover Operator">Primover Operator</option>
+                            <option value="Signal Man">Signal Man</option>
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Submit Assignment</button>
@@ -538,27 +536,35 @@ if (!isset($_SESSION['port_user']) || !isset($_SESSION['port_name'])) {
         <div class="col-md-6">
             <div class="card p-4">
                 <h5 class="mb-3">Role Management</h5>
-                <form>
+                <form id="roleManagementForm">
                     <div class="mb-2">
                         <label class="form-label">User ID</label>
-                        <input type="text" class="form-control" placeholder="Enter User ID">
+                        <input type="text" id="role_user_id" class="form-control" placeholder="Enter User ID" onchange="loadUserDetailsForRole(this.value)">
                     </div>
                     <div class="mb-2">
                         <label class="form-label">Name</label>
-                        <input type="text" class="form-control" placeholder="Enter User Name">
+                        <input type="text" id="role_user_name" class="form-control" placeholder="Enter User Name" readonly>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Division</label>
+                        <input type="text" id="role_division" class="form-control" placeholder="Division" readonly>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Section</label>
+                        <input type="text" id="role_section" class="form-control" placeholder="Section" readonly>
                     </div>
                     <div class="mb-2">
                         <label class="form-label">Current Role</label>
-                        <input type="text" class="form-control" value="Employee" readonly>
+                        <input type="text" id="role_current_role" class="form-control" value="Employee" readonly>
                     </div>
                     <div class="mb-2">
                         <label class="form-label">New Role</label>
-                        <select class="form-select">
-                            <option selected>Select New Role</option>
-                            <option>Granty Crane Operator</option>
-                            <option>Transfer Crane Operator</option>
-                            <option>Primover Operator</option>
-                            <option>Signal Man</option>
+                        <select id="role_new_role" class="form-select">
+                            <option value="">Select New Role</option>
+                            <option value="Granty Crane Operator">Granty Crane Operator</option>
+                            <option value="Transfer Crane Operator">Transfer Crane Operator</option>
+                            <option value="Primover Operator">Primover Operator</option>
+                            <option value="Signal Man">Signal Man</option>
                         </select>
                     </div>
                     <div class="mb-2">
@@ -568,19 +574,13 @@ if (!isset($_SESSION['port_user']) || !isset($_SESSION['port_name'])) {
                             <label class="form-check-label" for="active">Active</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="status" id="nonactive" value="Non Active">
-                            <label class="form-check-label" for="nonactive">Non Active</label>
+                            <input class="form-check-input" type="radio" name="status" id="inactive" value="Inactive">
+                            <label class="form-check-label" for="inactive">Inactive</label>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Assigned Port</label>
-                        <select class="form-select">
-                            <option selected>Select Port</option>
-                            <option>Colombo</option>
-                            <option>Galle</option>
-                            <option>Trincomalee</option>
-                            <option>Hambantota</option>
-                        </select>
+                        <input type="text" id="role_assigned_port" class="form-control" value="<?= htmlspecialchars($_SESSION['port_name']) ?>" readonly>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Update Role</button>
                 </form>
@@ -678,5 +678,215 @@ if (!isset($_SESSION['port_user']) || !isset($_SESSION['port_name'])) {
         </div>
     </div>
 </div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Function to load employee details for assignment
+function loadEmployeeDetailsForAssign(employeeId) {
+    if (!employeeId.trim()) {
+        clearAssignForm();
+        return;
+    }
+    
+    // Show loading state
+    const nameField = document.getElementById('assign_employee_name');
+    nameField.value = 'Loading...';
+    
+    fetch('test_get_employee.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            employee_id: employeeId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('assign_employee_name').value = data.data.name || '';
+            document.getElementById('assign_division').value = data.data.division || '';
+            document.getElementById('assign_section').value = data.data.section || '';
+        } else {
+            alert('Employee not found: ' + data.message);
+            clearAssignForm();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error loading employee details');
+        clearAssignForm();
+    });
+}
+
+// Function to load user details for role management
+function loadUserDetailsForRole(userId) {
+    if (!userId.trim()) {
+        clearRoleForm();
+        return;
+    }
+    
+    // Show loading state
+    const nameField = document.getElementById('role_user_name');
+    nameField.value = 'Loading...';
+    
+    fetch('test_get_role.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            user_id: userId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('role_user_name').value = data.data.name || '';
+            document.getElementById('role_division').value = data.data.division || '';
+            document.getElementById('role_section').value = data.data.section || '';
+            document.getElementById('role_current_role').value = data.data.current_role || 'Employee';
+            
+            // Set status radio button
+            if (data.data.status === 'Inactive') {
+                document.getElementById('inactive').checked = true;
+            } else {
+                document.getElementById('active').checked = true;
+            }
+        } else {
+            alert('User not found: ' + data.message);
+            clearRoleForm();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error loading user details');
+        clearRoleForm();
+    });
+}
+
+// Clear assign form
+function clearAssignForm() {
+    document.getElementById('assign_employee_name').value = '';
+    document.getElementById('assign_division').value = '';
+    document.getElementById('assign_section').value = '';
+    document.getElementById('assign_role').value = '';
+}
+
+// Clear role form
+function clearRoleForm() {
+    document.getElementById('role_user_name').value = '';
+    document.getElementById('role_division').value = '';
+    document.getElementById('role_section').value = '';
+    document.getElementById('role_current_role').value = 'Employee';
+    document.getElementById('role_new_role').value = '';
+    document.getElementById('active').checked = true;
+}
+
+// Handle assign employee form submission
+document.getElementById('assignEmployeeForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        employee_id: document.getElementById('assign_employee_id').value,
+        employee_name: document.getElementById('assign_employee_name').value,
+        division: document.getElementById('assign_division').value,
+        section: document.getElementById('assign_section').value,
+        role: document.getElementById('assign_role').value
+    };
+    
+    if (!formData.employee_id || !formData.employee_name || !formData.role) {
+        alert('Please fill all required fields');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Assigning...';
+    submitBtn.disabled = true;
+    
+    fetch('save_employee_assignment.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Employee assigned successfully!');
+            document.getElementById('assignEmployeeForm').reset();
+            clearAssignForm();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving assignment');
+    })
+    .finally(() => {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// Handle role management form submission
+document.getElementById('roleManagementForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        user_id: document.getElementById('role_user_id').value,
+        user_name: document.getElementById('role_user_name').value,
+        division: document.getElementById('role_division').value,
+        section: document.getElementById('role_section').value,
+        current_role: document.getElementById('role_current_role').value,
+        new_role: document.getElementById('role_new_role').value,
+        status: document.querySelector('input[name="status"]:checked').value,
+        assigned_port: document.getElementById('role_assigned_port').value
+    };
+    
+    if (!formData.user_id || !formData.user_name || !formData.new_role) {
+        alert('Please fill all required fields');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Updating...';
+    submitBtn.disabled = true;
+    
+    fetch('save_role_update.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Role updated successfully!');
+            document.getElementById('roleManagementForm').reset();
+            clearRoleForm();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating role');
+    })
+    .finally(() => {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    });
+});
+</script>
 </body>
 </html>
