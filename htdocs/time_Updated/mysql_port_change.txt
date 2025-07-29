@@ -1,0 +1,12 @@
+# Alternative MySQL Configuration
+# If you need to change MySQL port due to conflicts
+
+# 1. Edit C:\xampp\mysql\bin\my.ini
+[mysqld]
+port=3307
+bind-address=127.0.0.1
+
+# 2. Update your database connection in dbc.php
+$connect = mysqli_connect("localhost", "root", "", "slpa_db", 3307);
+
+# 3. Restart XAMPP MySQL service
