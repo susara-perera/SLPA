@@ -59,7 +59,7 @@ if ($count_result['total'] > 0) {
         echo "<td>{$row['employee_ID']}</td>";
         echo "<td>{$row['fingerprint_id']}</td>";
         echo "<td>{$row['date_']}</td>";
-        echo "<td>{$row['time']}</td>";
+        echo "<td>{$row['time_']}</td>";
         echo "<td>{$row['scan_type']}</td>";
         echo "</tr>";
     }
@@ -82,7 +82,7 @@ if ($emp_count > 0) {
     while ($row = mysqli_fetch_assoc($emp_query)) {
         echo "<tr>";
         echo "<td>{$row['date_']}</td>";
-        echo "<td>{$row['time']}</td>";
+        echo "<td>{$row['time_']}</td>";
         echo "<td>{$row['scan_type']}</td>";
         echo "<td>{$row['fingerprint_id']}</td>";
         echo "</tr>";
